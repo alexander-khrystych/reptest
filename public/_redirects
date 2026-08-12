@@ -1,0 +1,4 @@
+# SPA fallback for Cloudflare Pages: serve the app for observer links like /w/<roomId>
+# (and any client route) instead of 404ing. Resume links use the URL fragment, so they're
+# unaffected. Real asset files are served directly before this rule applies.
+/*    /index.html   200

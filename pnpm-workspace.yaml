@@ -1,0 +1,6 @@
+# Build-script approvals for the Cloudflare relay toolchain.
+# workerd = local Workers runtime (used by `pnpm party:dev` / wrangler dev);
+# esbuild = bundles the relay Worker on deploy.
+allowBuilds:
+  esbuild: true
+  workerd: true
