@@ -1,0 +1,401 @@
+/* Result grid — Option A (vertical labels), ported from the design spike.
+   Uses the global theme CSS variables from index.css; everything is scoped under .rg-*.
+   Cell fills use background-COLOR so the zebra/title tints (background-IMAGE) can layer on
+   top without wiping the choice colours (matches, poles). */
+
+.rg-scroll {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background-color: var(--card);
+}
+
+.rg-grid {
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: var(--ink);
+  background-color: var(--card);
+  /* subtle tints, theme-aware */
+  --grid-zebra: rgba(20, 28, 31, 0.05);
+  --grid-title: rgba(20, 28, 31, 0.06);
+}
+[data-theme='dark'] .rg-grid {
+  --grid-zebra: rgba(255, 255, 255, 0.055);
+  --grid-title: rgba(255, 255, 255, 0.07);
+}
+.rg-grid td,
+.rg-grid th {
+  position: relative;
+  border: 1px solid var(--line);
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+/* gutters */
+.rg-grid .gc {
+  background-color: var(--line-2);
+  font-size: 10px;
+  color: var(--ink-2);
+  height: 16px;
+}
+.rg-grid .rnum {
+  background-color: var(--line-2);
+  font-size: 10px;
+  color: var(--ink-2);
+}
+.rg-grid .cnr {
+  background-color: var(--line-2);
+}
+
+/* left column: class labels (horizontal, may wrap). Tinted a bit (canvas) to frame the grid. */
+.rg-grid td.cls {
+  background-color: var(--canvas);
+  text-align: left;
+  padding: 3px 8px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+/* valences column — a narrow vertical grouping label left of the class column. Cells are merged
+   (rowspan) per valence and tinted with that valence's colour. Bottom-aligned groups may let
+   their text overflow up into the group above (accepted, per spec), hence overflow: visible. */
+.rg-grid td.val {
+  padding: 2px 0;
+  text-align: center;
+  overflow: visible;
+  border-right: 2px solid var(--ink-3);
+}
+.rg-grid td.val .valt {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--ink);
+}
+.rg-grid td.val-top {
+  vertical-align: top;
+}
+.rg-grid td.val-bottom {
+  vertical-align: bottom;
+}
+.rg-grid td.val-middle {
+  vertical-align: middle;
+}
+.rg-grid td.valhead {
+  background-color: var(--line-2);
+  text-align: center;
+  vertical-align: middle;
+  padding: 4px 0;
+  border-right: 2px solid var(--ink-3);
+}
+.rg-grid td.valhead .valt {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+}
+
+/* body cells */
+.rg-grid td.cell {
+  height: 24px;
+  background-color: var(--card);
+  cursor: pointer;
+}
+.rg-grid td.cell.match {
+  background-color: var(--emergent-tint);
+}
+.rg-grid td.cell.match::after {
+  content: '✓';
+  color: var(--emergent);
+  font-weight: 700;
+  font-size: 14px;
+  /* sit above the pair-comparison hatching (see .rg-diag) */
+  position: relative;
+  z-index: 2;
+}
+
+/* the "one of the three compared" frame — a top layer over every other cell mark (✓, hatch) */
+.rg-grid td.cell .rg-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border: 1.5px solid var(--frame);
+  pointer-events: none;
+}
+
+/* pair-comparison highlight: hairline diagonal hatching for the active pair's cells (green +1 /
+   red -1). Kept very thin and translucent so it's just visible without obscuring the cell. */
+.rg-grid td.cell .rg-diag {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.5;
+  pointer-events: none;
+}
+/* green (+1) runs top-left → bottom-right and uses the app's primary (matches the Export button);
+   red (-1) runs the opposite way (top-right → bottom-left) so the two never look alike. */
+.rg-grid td.cell .rg-diag-pos {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--primary) 0,
+    var(--primary) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+.rg-grid td.cell .rg-diag-neg {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--neg) 0,
+    var(--neg) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+
+/* pole columns (X / Y) — the readable content, given the freed width */
+.rg-grid td.pole {
+  text-align: left;
+  padding: 3px 9px;
+  height: 24px;
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: normal;
+}
+.rg-grid td.pole.em {
+  background-color: var(--emergent-tint);
+}
+.rg-grid td.pole.co {
+  background-color: var(--contrast-tint);
+}
+
+/* vertical labels (names row top, roles row bottom) */
+.rg-grid td.lab {
+  padding: 6px 1px;
+  background-color: var(--card);
+  overflow: hidden;
+}
+.rg-grid td.lab.namerow {
+  vertical-align: bottom;
+}
+.rg-grid td.lab.rolerow {
+  vertical-align: top;
+}
+.rg-grid td.lab .t {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: normal;
+  display: inline-block;
+  max-height: 160px;
+  line-height: 1.15;
+  font-size: 11.5px;
+  text-align: left;
+  color: var(--ink);
+}
+
+/* diagonal corner cells (A1, A24) — part of the tinted class column */
+.rg-grid td.diag {
+  background-color: var(--canvas);
+  padding: 0;
+}
+.rg-grid td.diag svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.rg-grid td.diag svg line {
+  stroke: var(--ink-3);
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+}
+.rg-grid td.diag .lbl {
+  position: absolute;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1;
+}
+.rg-grid td.diag .tr {
+  top: 5px;
+  right: 6px;
+}
+.rg-grid td.diag .bl {
+  bottom: 5px;
+  left: 6px;
+}
+.rg-grid td.diag .tl {
+  top: 5px;
+  left: 6px;
+}
+.rg-grid td.diag .br {
+  bottom: 5px;
+  right: 6px;
+}
+
+/* zebra: every other construct row is very slightly darker (choices still prevail).
+   Column A (the class column) is excluded so its group colour stays clean. */
+.rg-grid tr.zebra td:not(.cls) {
+  background-image: linear-gradient(var(--grid-zebra), var(--grid-zebra));
+}
+/* the two pole titles (X1/Y1) tinted a touch more */
+.rg-grid td.rg-title {
+  background-image: linear-gradient(var(--grid-title), var(--grid-title));
+}
+
+/* bold separators framing the body matrix from the header rows/columns */
+.rg-grid td.b-bottom {
+  border-bottom: 2px solid var(--ink-3);
+}
+.rg-grid td.b-top {
+  border-top: 2px solid var(--ink-3);
+}
+.rg-grid td.b-right {
+  border-right: 2px solid var(--ink-3);
+}
+.rg-grid td.b-left {
+  border-left: 2px solid var(--ink-3);
+}
+
+/* click-to-highlight: a cell lights its whole row + column */
+.rg-grid td.rg-hl::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--primary);
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+/* legend swatches */
+.rg-sw {
+  width: 17px;
+  height: 17px;
+  border: 1px solid var(--line);
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  font-size: 11px;
+  background-color: var(--card);
+}
+.rg-sw-match {
+  background-color: var(--emergent-tint);
+  border-color: var(--emergent);
+  color: var(--emergent);
+  font-weight: 700;
+}
+.rg-sw-frame {
+  border: 1.5px solid var(--frame);
+  background-color: var(--card);
+}
+.rg-sw-pos {
+  border-color: var(--primary);
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--primary) 0,
+    var(--primary) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+.rg-sw-neg {
+  border-color: var(--neg);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--neg) 0,
+    var(--neg) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+
+/* bottom legend is print-only (the on-screen legend sits at the top) */
+.rg-printonly {
+  display: none;
+}
+
+/* multi-table PDF: a print-only stack of the selected tables, one table per page */
+.rg-print-stack {
+  display: none;
+}
+.rg-print-page {
+  margin: 0;
+}
+.rg-print-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+
+/* the pair-comparison list, rendered below the table(s) in the exported PDF (screen shows the
+   interactive panel above the table instead) */
+.rg-print-pairs {
+  margin-top: 14px;
+  break-inside: avoid;
+}
+.rg-print-pairs h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 5px;
+  color: var(--ink);
+}
+.rg-print-pair {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.rg-print-pair .pos {
+  color: var(--primary);
+  font-weight: 700;
+}
+.rg-print-pair .neg {
+  color: var(--neg);
+  font-weight: 700;
+}
+
+/* print: landscape, keep the highlights, drop app chrome */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+  .rg-noprint {
+    display: none !important;
+  }
+  .rg-printonly {
+    display: flex;
+  }
+  /* the export stack becomes the whole document; each table starts a fresh page */
+  .rg-print-stack {
+    display: block;
+  }
+  .rg-print-page + .rg-print-page {
+    break-before: page;
+  }
+  .rg-scroll {
+    overflow: visible !important;
+    border: none !important;
+  }
+  .rg-grid,
+  .rg-grid * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* export the grid in its default state — drop the on-screen click highlight */
+  .rg-grid td.rg-hl::before {
+    display: none;
+  }
+}

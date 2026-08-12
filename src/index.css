@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+/* Dark mode is driven by the [data-theme="dark"] attribute on <html> (toggled from the store),
+   not by the OS preference — so viewers can flip it per-client. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --bg: #eef2f2;
+  --canvas: #f6f8f8;
+  --card: #ffffff;
+  --ink: #141c1f;
+  --ink-2: #3f535b;
+  --ink-3: #8a9aa0;
+  --line: #d3dbdb;
+  --line-2: #e7ecec;
+  --primary: #0e6e74;
+  --primary-2: #0b565b;
+  --primary-tint: #deeded;
+  --emergent: #a9741a;
+  --emergent-tint: #f4ead4;
+  --contrast: #4e6379;
+  --contrast-tint: #e4e9ee;
+  --triad: #c0392b;
+  /* pale-blue frame for the triad ("one of the three compared") cells — distinct from the
+     green/red pair-comparison lines below */
+  --frame: #5b93c9;
+  /* git-diff-style pair-comparison colours (score text + diagonal cell hatching) */
+  --pos: #2f9e44;
+  --neg: #e03131;
+}
+
+[data-theme="dark"] {
+  --bg: #0f181c;
+  --canvas: #132026;
+  --card: #18262c;
+  --ink: #e7eeee;
+  --ink-2: #aebdc0;
+  --ink-3: #6e8087;
+  --line: #2a3a40;
+  --line-2: #222f35;
+  --primary: #2fa6ac;
+  --primary-2: #42b7bd;
+  --primary-tint: #123338;
+  --emergent: #d6a24a;
+  --emergent-tint: #33290f;
+  --contrast: #8ca2be;
+  --contrast-tint: #1d2938;
+  --triad: #e1594b;
+  --frame: #6ba3d6;
+  --pos: #4cc26a;
+  --neg: #ff6b6b;
+}
+
+/* Expose the palette to Tailwind as utilities (bg-card, text-ink-2, border-line…).
+   `inline` keeps the var() references live, so utilities flip with the theme attribute. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-canvas: var(--canvas);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-primary: var(--primary);
+  --color-primary-2: var(--primary-2);
+  --color-primary-tint: var(--primary-tint);
+  --color-emergent: var(--emergent);
+  --color-emergent-tint: var(--emergent-tint);
+  --color-contrast: var(--contrast);
+  --color-contrast-tint: var(--contrast-tint);
+  --color-triad: var(--triad);
+  --color-frame: var(--frame);
+  --color-pos: var(--pos);
+  --color-neg: var(--neg);
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Fluid stage-to-stage transition (Start → Names → Comparisons → Result). */
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-fade {
+  animation: fade 0.28s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade {
+    animation: none;
+  }
+}

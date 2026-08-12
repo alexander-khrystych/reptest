@@ -1,0 +1,85 @@
+import type { Locale } from '@/i18n/config'
+
+/**
+ * Bottom-row role prompts (grid B24:W24) — the fixed constant prompts the testee's
+ * names are answers to. Indexed 0-based by card position (card 1 = index 0).
+ *
+ * EN uses the article-free convention. RU/UA are gendered for a male testee
+ * (Wife / Бывшая возлюбленная / Колишня кохана) per the current decision.
+ * These are fixed instrument content localised into all three languages —
+ * distinct from the testee's own entered names, which are never translated.
+ */
+export const ROLES: Record<Locale, readonly string[]> = {
+  en: [
+    'Me',
+    'Mother',
+    'Father',
+    'Brother',
+    'Sister',
+    'Wife',
+    'Ex-lover',
+    'Friend',
+    'Ex-friend',
+    'Status figure who is a personality for me',
+    'Doctor',
+    'Neighbor',
+    'Person who rejects me',
+    'Person I pity',
+    'Person who is a threat to me',
+    'Person I am attracted to',
+    'Accepted teacher',
+    'Rejected teacher',
+    'Boss',
+    'Successful person',
+    'Happy person',
+    'Highly moral person',
+  ],
+  uk: [
+    'Я сам',
+    'Мама',
+    'Батько',
+    'Брат',
+    'Сестра',
+    'Дружина',
+    'Колишня кохана',
+    'Друг',
+    'Колишній друг',
+    'Статусна особистість, яка є для мене особистістю',
+    'Лікар',
+    'Сусід',
+    'Людина, яка мене відкидає',
+    'Людина, яку я жалію',
+    'Людина, яка становить для мене загрозу',
+    'Людина, яка мене приваблює',
+    'Прийнятний учитель',
+    'Відкинутий учитель',
+    'Начальник',
+    'Успішна людина',
+    'Щаслива людина',
+    'Високоморальна людина',
+  ],
+  ru: [
+    'Я сам',
+    'Мама',
+    'Отец',
+    'Брат',
+    'Сестра',
+    'Жена',
+    'Бывшая возлюбленная',
+    'Друг',
+    'Бывший друг',
+    'Статусная личность, которая является для меня личностью',
+    'Врач',
+    'Сосед',
+    'Человек, который меня отвергает',
+    'Человек, которого я жалею',
+    'Человек, который представляет для меня угрозу',
+    'Человек, который меня привлекает',
+    'Принимаемый учитель',
+    'Отвергаемый учитель',
+    'Начальник',
+    'Преуспевающий человек',
+    'Счастливый человек',
+    'Высоконравственный человек',
+  ],
+}
