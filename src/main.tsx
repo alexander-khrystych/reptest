@@ -5,6 +5,7 @@ import App from '@/App'
 import { initI18n } from '@/i18n'
 import { useAppStore } from '@/store/useAppStore'
 import { validateGridData } from '@/data'
+import { initSession } from '@/session/session'
 
 // Fail loudly in dev if the fixed roles/classes/triads ever drift out of shape.
 if (import.meta.env.DEV) {
@@ -28,6 +29,10 @@ const applyPrefs = (lang: string, mode: string) => {
 }
 applyPrefs(language, theme)
 useAppStore.subscribe((s) => applyPrefs(s.language, s.theme))
+
+// Boot session sharing: connect as observer for a /w/<room> link, or silently resume a testee's
+// previously-shared room after a reload.
+initSession()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -108,6 +108,39 @@ export const en = {
     warnBody: 'Starting over will wipe all your current progress and reset the test. Do you wish to start the test over?',
     confirmBody: 'This action is irreversible, all progress will be lost. Are you sure you wish to start over?',
   },
+  sharing: {
+    // Share button — the leading dot is the coloured indicator, rendered separately.
+    modeSilent: 'Sharing mode: OFF',
+    modeListening: 'Sharing mode: Listening...',
+    modeBroadcasting: 'Sharing mode: Broadcasting',
+    ariaButton: 'Session sharing',
+    // Sharing popup (opened from the button)
+    title: 'Sharing',
+    enable: 'Share this session',
+    subtitle: 'Enable real-time session sharing. The observer will have read-only access.',
+    linkLabel: 'Observer link',
+    linkHint: 'Click to copy, then send it to your observer.',
+    copied: 'Copied!',
+    observers: 'Observers connected: {{count}}',
+    waitingForObserver: 'Waiting for an observer to join…',
+    close: 'Close',
+    // Approval popup (testee)
+    approveTitle: 'Let an observer in?',
+    approveBody: 'Someone opened your link and wants to watch this session in read-only mode.',
+    approveYes: 'Allow',
+    approveNo: 'Deny',
+    // Observer screen
+    connecting: 'Connecting…',
+    waitingTitle: 'Waiting for the host',
+    waitingBody: 'The host has been asked to let you in. This will update on its own.',
+    live: 'Live',
+    observerNote: 'Watching a shared session — read only',
+    rejectedTitle: 'Denied',
+    rejectedBody: 'The host chose not to share this session with you.',
+    endedTitle: 'Sharing ended',
+    endedBody: 'The host has stopped sharing this session.',
+    ok: 'OK',
+  },
 }
 
 /** Shape all locales conform to (string values, so translations are accepted). */

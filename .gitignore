@@ -6,6 +6,11 @@ dist-ssr
 *.tsbuildinfo
 .vite
 
+# Cloudflare Worker (relay) — generated types + local wrangler state + secrets
+worker-configuration.d.ts
+.wrangler
+.dev.vars
+
 # Editor / OS
 .claude
 .DS_Store

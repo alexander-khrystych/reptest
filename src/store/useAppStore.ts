@@ -5,6 +5,8 @@ import i18n from '@/i18n'
 import { DEFAULT_LOCALE } from '@/i18n/config'
 import type { Locale } from '@/i18n/config'
 import { GRID_SIZE } from '@/data'
+import { IS_OBSERVER } from '@/session/config'
+import type { BoardSnapshot } from '@/session/protocol'
 
 export type Phase = 'start' | 'names' | 'elicitation' | 'result'
 export type Theme = 'light' | 'dark'
@@ -70,6 +72,9 @@ interface AppState {
   // has at most one active pair — the one highlighted on the grid.
   pairsByTable: Record<string, CharPair[]>
   activePairByTable: Record<string, string | null>
+  /** Monotonic counter bumped on every board change that should be broadcast (see @/session).
+   *  Not persisted — a fresh reload re-baselines it. */
+  boardRev: number
 
   setLanguage: (locale: Locale) => void
   toggleTheme: () => void
@@ -98,6 +103,13 @@ interface AppState {
   /** Toggle a pair as the (single) active one for its table; clicking the active one clears it. */
   toggleActivePair: (tableId: string, id: string) => void
   clearTablePairs: (tableId: string) => void
+
+  // live sharing (see @/session)
+  /** Bump the broadcast revision after committing a board change that should sync — clicks commit
+   *  at once; text inputs (names, poles) commit on blur only when their value actually changed. */
+  bumpBoard: () => void
+  /** Observer only: replace the board (names + constructs) with a snapshot from the room. */
+  applySnapshot: (board: BoardSnapshot) => void
 }
 
 const emptyRow = (): string[] => Array.from({ length: GRID_SIZE }, () => '')
@@ -132,6 +144,7 @@ export const useAppStore = create<AppState>()(
         language: DEFAULT_LOCALE,
         theme: 'light',
         phase: 'start',
+        boardRev: 0,
         ...freshTest(),
 
         setLanguage: (language) => {
@@ -146,7 +159,8 @@ export const useAppStore = create<AppState>()(
             names[index] = value
             const drafts = s.drafts.slice()
             drafts[index] = '' // committing clears the pending draft
-            return { names, drafts }
+            // A name commits (Enter/Next/Finish) already meaning "focus off + changed" — broadcast.
+            return { names, drafts, boardRev: s.boardRev + 1 }
           }),
         saveDraft: (index, value) =>
           set((s) => {
@@ -157,7 +171,15 @@ export const useAppStore = create<AppState>()(
           }),
         setNameIndex: (nameIndex) => set({ nameIndex }),
 
-        setOdd: (oddPos) => patchConstruct({ oddPos }),
+        // A click — commits (and broadcasts) at once, unlike the pole text inputs below.
+        setOdd: (oddPos) =>
+          set((s) => {
+            const constructs = s.constructs.slice()
+            constructs[s.triadIndex] = { ...constructs[s.triadIndex], oddPos }
+            return { constructs, boardRev: s.boardRev + 1 }
+          }),
+        // Pole text: mutate live for the testee's own screen, but DON'T bump here — the
+        // elicitation inputs call bumpBoard() on blur, only when the value actually changed.
         setEmergent: (emergent) => patchConstruct({ emergent }),
         setContrast: (contrast) => patchConstruct({ contrast }),
         toggleSelected: (pos) =>
@@ -168,7 +190,7 @@ export const useAppStore = create<AppState>()(
               ? cur.selected.filter((p) => p !== pos)
               : [...cur.selected, pos]
             constructs[s.triadIndex] = { ...cur, selected }
-            return { constructs }
+            return { constructs, boardRev: s.boardRev + 1 } // a tap — broadcast at once
           }),
         setTriadIndex: (triadIndex) => set({ triadIndex }),
         enterElicitation: () =>
@@ -260,25 +282,43 @@ export const useAppStore = create<AppState>()(
             delete activePairByTable[tableId]
             return { pairsByTable, activePairByTable }
           }),
+
+        bumpBoard: () => set((s) => ({ boardRev: s.boardRev + 1 })),
+        // Observer only: the room is the source of truth for the board; the observer's own
+        // analysis (savedTables / pairs / highlights) is untouched and stays local.
+        applySnapshot: (board) => set({ names: board.names, constructs: board.constructs }),
       }
     },
     {
-      name: 'repgrid',
+      // Observer tabs use a separate key so a live view can never overwrite a real test in the
+      // same browser; their board comes live from the room, so only prefs are persisted.
+      name: IS_OBSERVER ? 'repgrid:observer' : 'repgrid',
       version: 5,
       // Persist the whole session so a refresh never loses progress (localStorage autosave).
-      partialize: (s) => ({
-        language: s.language,
-        theme: s.theme,
-        phase: s.phase,
-        names: s.names,
-        drafts: s.drafts,
-        nameIndex: s.nameIndex,
-        constructs: s.constructs,
-        triadIndex: s.triadIndex,
-        savedTables: s.savedTables,
-        pairsByTable: s.pairsByTable,
-        activePairByTable: s.activePairByTable,
-      }),
+      partialize: (s) =>
+        IS_OBSERVER
+          ? {
+              // The observer's board comes live from the room, so it's never persisted — but the
+              // observer's OWN analysis (custom tables + per-table pairs) must survive a refresh.
+              language: s.language,
+              theme: s.theme,
+              savedTables: s.savedTables,
+              pairsByTable: s.pairsByTable,
+              activePairByTable: s.activePairByTable,
+            }
+          : {
+              language: s.language,
+              theme: s.theme,
+              phase: s.phase,
+              names: s.names,
+              drafts: s.drafts,
+              nameIndex: s.nameIndex,
+              constructs: s.constructs,
+              triadIndex: s.triadIndex,
+              savedTables: s.savedTables,
+              pairsByTable: s.pairsByTable,
+              activePairByTable: s.activePairByTable,
+            },
       migrate: (persisted, version) => {
         const p = (persisted ?? {}) as Partial<AppState>
         if (version < 2) {

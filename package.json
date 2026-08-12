@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "typecheck:party": "wrangler types && tsc --noEmit -p party/tsconfig.json",
+    "party:dev": "wrangler dev",
+    "party:deploy": "wrangler deploy",
+    "party:tail": "wrangler tail"
   },
   "keywords": [],
   "author": "",
@@ -27,13 +31,16 @@
     "@vitejs/plugin-react": "^6.0.5",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "vite": "^8.2.1"
+    "vite": "^8.2.1",
+    "wrangler": "^4.120.1"
   },
   "dependencies": {
     "i18next": "^26.3.6",
     "i18next-browser-languagedetector": "^8.2.1",
     "lz-string": "^1.5.0",
     "nanoid": "^6.0.1",
+    "partyserver": "^0.5.10",
+    "partysocket": "^1.3.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-i18next": "^17.0.11",

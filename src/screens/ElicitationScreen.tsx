@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store/useAppStore'
 import { TRIADS, GRID_SIZE } from '@/data'
@@ -18,6 +19,17 @@ export function ElicitationScreen() {
   const toggleSelected = useAppStore((s) => s.toggleSelected)
   const setTriadIndex = useAppStore((s) => s.setTriadIndex)
   const setPhase = useAppStore((s) => s.setPhase)
+  const bumpBoard = useAppStore((s) => s.bumpBoard)
+
+  // Pole fields update the store live (for the testee's own grid) but only broadcast on blur,
+  // and only when the value actually changed — hence remember the value at focus time.
+  const focusVal = useRef('')
+  const rememberFocus = (e: { target: HTMLInputElement }) => {
+    focusVal.current = e.target.value
+  }
+  const broadcastIfChanged = (e: { target: HTMLInputElement }) => {
+    if (e.target.value !== focusVal.current) bumpBoard()
+  }
 
   const cur = constructs[triadIndex]
   const triad = TRIADS[triadIndex].map((p) => p - 1) // 1-based card positions → 0-based
@@ -47,6 +59,8 @@ export function ElicitationScreen() {
             type="text"
             value={cur.emergent}
             onChange={(e) => setEmergent(e.target.value)}
+            onFocus={rememberFocus}
+            onBlur={broadcastIfChanged}
             placeholder={t('elicit.emergentPlaceholder')}
             className="w-full rounded-[9px] border border-line bg-card px-3.5 py-2.5 text-[15px] text-ink outline-none focus:border-emergent focus:shadow-[0_0_0_3px_var(--emergent-tint)]"
           />
@@ -56,6 +70,8 @@ export function ElicitationScreen() {
             type="text"
             value={cur.contrast}
             onChange={(e) => setContrast(e.target.value)}
+            onFocus={rememberFocus}
+            onBlur={broadcastIfChanged}
             placeholder={t('elicit.contrastPlaceholder')}
             className="w-full rounded-[9px] border border-line bg-card px-3.5 py-2.5 text-[15px] text-ink outline-none focus:border-contrast focus:shadow-[0_0_0_3px_var(--contrast-tint)]"
           />
