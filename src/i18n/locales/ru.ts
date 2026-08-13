@@ -138,5 +138,7 @@ export const ru: Translation = {
     endedTitle: 'Совместный доступ завершён',
     endedBody: 'Автор теста завершил трансляцию.',
     ok: 'ОК',
+    leave: 'Покинуть трансляцию',
+    observerLeftToast: 'Наблюдатель покинул сессию.',
   },
 }

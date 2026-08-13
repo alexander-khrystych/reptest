@@ -140,6 +140,8 @@ export const en = {
     endedTitle: 'Sharing ended',
     endedBody: 'The host has stopped sharing this session.',
     ok: 'OK',
+    leave: 'Leave broadcast',
+    observerLeftToast: 'The observer left the session.',
   },
 }
 

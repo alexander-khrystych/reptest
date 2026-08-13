@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useSessionStore } from '@/session/useSessionStore'
@@ -167,6 +167,27 @@ function ApprovalPopup() {
   )
 }
 
+/** A transient testee notification (e.g. the observer left), auto-cleared after a few seconds. */
+function Toast() {
+  const { t } = useTranslation()
+  const toast = useSessionStore((s) => s.toast)
+  const patch = useSessionStore((s) => s.patch)
+  useEffect(() => {
+    if (!toast) return
+    const id = setTimeout(() => patch({ toast: null }), 4000)
+    return () => clearTimeout(id)
+  }, [toast, patch])
+  if (!toast) return null
+  return createPortal(
+    <div className="rg-noprint fixed inset-x-0 bottom-5 z-[70] flex justify-center px-4">
+      <div className="animate-fade rounded-full border border-line bg-card px-4 py-2 text-sm text-ink shadow-lg">
+        {t(toast)}
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
 /** Testee-side sharing overlays, mounted once by the app; each portals to <body>. */
 export function SessionOverlays() {
   const popupOpen = useSessionStore((s) => s.popupOpen)
@@ -175,6 +196,7 @@ export function SessionOverlays() {
     <>
       {popupOpen && <SharePopup />}
       {pendingApproval && <ApprovalPopup />}
+      <Toast />
     </>
   )
 }

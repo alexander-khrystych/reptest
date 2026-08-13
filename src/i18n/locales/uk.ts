@@ -138,5 +138,7 @@ export const uk: Translation = {
     endedTitle: 'Трансляцію завершено',
     endedBody: 'Автор тесту завершив трансляцію цієї сесії.',
     ok: 'ОК',
+    leave: 'Покинути трансляцію',
+    observerLeftToast: 'Спостерігач залишив сесію.',
   },
 }

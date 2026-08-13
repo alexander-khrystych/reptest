@@ -64,6 +64,12 @@ function onTesteeMessage(data: string) {
   } catch {
     return
   }
+  if (msg.t === 'terminated') {
+    // The observer deliberately left → notify + turn sharing off entirely (Broadcasting → Silent).
+    sess().patch({ toast: 'sharing.observerLeftToast' })
+    disableShare()
+    return
+  }
   if (msg.t !== 'state') return
 
   sess().patch({
@@ -175,6 +181,16 @@ export function approveObserver() {
 export function rejectObserver() {
   sendToRoom({ t: 'reject' })
   sess().patch({ pendingApproval: false })
+}
+
+/** Observer action: deliberately leave the broadcast. Tells the room (which flips the testee to
+ *  Silent), then tears down (manual close ⇒ no reconnect) and returns to the start page. */
+export function leaveRoom() {
+  sendToRoom({ t: 'leave' })
+  disconnectSocket() // close() flushes the queued 'leave' and prevents a reconnect
+  setTimeout(() => {
+    window.location.href = '/'
+  }, 80)
 }
 
 export const openSharePopup = () => sess().patch({ popupOpen: true })

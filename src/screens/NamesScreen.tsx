@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store/useAppStore'
+import { usePrefsStore } from '@/store/usePrefsStore'
 import { ROLES, GRID_SIZE } from '@/data'
 
 /**
@@ -15,7 +16,7 @@ import { ROLES, GRID_SIZE } from '@/data'
  */
 export function NamesScreen() {
   const { t } = useTranslation()
-  const language = useAppStore((s) => s.language)
+  const language = usePrefsStore((s) => s.language)
   const names = useAppStore((s) => s.names)
   const drafts = useAppStore((s) => s.drafts)
   const nameIndex = useAppStore((s) => s.nameIndex)

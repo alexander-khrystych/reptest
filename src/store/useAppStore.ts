@@ -1,15 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { nanoid } from 'nanoid'
-import i18n from '@/i18n'
-import { DEFAULT_LOCALE } from '@/i18n/config'
-import type { Locale } from '@/i18n/config'
 import { GRID_SIZE } from '@/data'
 import { IS_OBSERVER } from '@/session/config'
 import type { BoardSnapshot } from '@/session/protocol'
 
 export type Phase = 'start' | 'names' | 'elicitation' | 'result'
-export type Theme = 'light' | 'dark'
+// language + theme moved to the global (non-role-scoped) usePrefsStore.
 
 /**
  * One elicited construct (one grid row). `oddPos` is the 0-based card position of the
@@ -59,8 +56,6 @@ export const DEFAULT_TABLE_ID = '__default__'
  * unsubmitted text). `constructs` holds the 22 elicited rows; `triadIndex` is the cursor.
  */
 interface AppState {
-  language: Locale
-  theme: Theme
   phase: Phase
   names: string[]
   drafts: string[]
@@ -76,8 +71,6 @@ interface AppState {
    *  Not persisted — a fresh reload re-baselines it. */
   boardRev: number
 
-  setLanguage: (locale: Locale) => void
-  toggleTheme: () => void
   setPhase: (phase: Phase) => void
   setName: (index: number, value: string) => void
   saveDraft: (index: number, value: string) => void
@@ -141,17 +134,10 @@ export const useAppStore = create<AppState>()(
         })
 
       return {
-        language: DEFAULT_LOCALE,
-        theme: 'light',
         phase: 'start',
         boardRev: 0,
         ...freshTest(),
 
-        setLanguage: (language) => {
-          void i18n.changeLanguage(language)
-          set({ language })
-        },
-        toggleTheme: () => set((s) => ({ theme: s.theme === 'dark' ? 'light' : 'dark' })),
         setPhase: (phase) => set({ phase }),
         setName: (index, value) =>
           set((s) => {
@@ -300,15 +286,12 @@ export const useAppStore = create<AppState>()(
           ? {
               // The observer's board comes live from the room, so it's never persisted — but the
               // observer's OWN analysis (custom tables + per-table pairs) must survive a refresh.
-              language: s.language,
-              theme: s.theme,
+              // (language + theme live in the global usePrefsStore, shared across modes.)
               savedTables: s.savedTables,
               pairsByTable: s.pairsByTable,
               activePairByTable: s.activePairByTable,
             }
           : {
-              language: s.language,
-              theme: s.theme,
               phase: s.phase,
               names: s.names,
               drafts: s.drafts,
@@ -323,13 +306,8 @@ export const useAppStore = create<AppState>()(
         const p = (persisted ?? {}) as Partial<AppState>
         if (version < 2) {
           // The names model changed (committed vs drafts, contiguous completion); the old
-          // shape could hold gaps. Reset the test but keep UI preferences.
-          return {
-            language: p.language ?? DEFAULT_LOCALE,
-            theme: p.theme ?? 'light',
-            phase: 'start',
-            ...freshTest(),
-          } as unknown as AppState
+          // shape could hold gaps. Reset the test (language/theme now live in usePrefsStore).
+          return { phase: 'start', ...freshTest() } as unknown as AppState
         }
         // v2 → v3 added custom tables; v3 → v4 a global pairs list; v4 → v5 made pairs per-table.
         // Older sessions get sensible defaults (no custom tables, no pairs).

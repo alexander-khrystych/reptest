@@ -91,12 +91,16 @@ export class Session extends Server<Env> {
   }
 
   async onMessage(conn: Connection, message: WSMessage) {
-    // Read-only enforcement: anything an observer sends is silently ignored.
-    if (!conn.tags.includes('testee')) return
     let msg: ClientMsg
     try {
       msg = JSON.parse(typeof message === 'string' ? message : new TextDecoder().decode(message))
     } catch {
+      return
+    }
+    // Read-only: an observer's only accepted message is a deliberate `leave`; everything else is
+    // silently ignored (the board is never mutated by an observer).
+    if (!conn.tags.includes('testee')) {
+      if (msg.t === 'leave') await this.handleObserverLeave(conn)
       return
     }
     switch (msg.t) {
@@ -133,6 +137,20 @@ export class Session extends Server<Env> {
         await this.pushStateToTestees(rejected)
         break
       }
+    }
+  }
+
+  /** The observer clicked "Leave broadcast": tell the testee to stop sharing entirely (→ Silent),
+   *  reset the room, and drop this observer. Distinct from a passive disconnect (which only drops
+   *  the testee to Listening and keeps the 30s grace). */
+  private async handleObserverLeave(conn: Connection) {
+    for (const tc of this.getConnections('testee')) this.send(tc, { t: 'terminated' })
+    await this.ctx.storage.delete('approved')
+    await this.ctx.storage.delete('snapshot')
+    try {
+      conn.close(1000, 'left')
+    } catch {
+      // already gone
     }
   }
 

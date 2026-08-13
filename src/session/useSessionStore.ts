@@ -27,6 +27,8 @@ export interface SessionState {
   popupOpen: boolean
   /** Observer-side connection lifecycle (unused by the testee). */
   observerStatus: ObserverStatus
+  /** Transient testee notification (an i18n key), auto-cleared by the overlay; null when none. */
+  toast: string | null
 
   patch: (p: Partial<SessionState>) => void
 }
@@ -47,6 +49,7 @@ export const useSessionStore = create<SessionState>()(
       pendingApproval: false,
       popupOpen: false,
       observerStatus: 'connecting',
+      toast: null,
       patch: (p) => set(p),
     }),
     {

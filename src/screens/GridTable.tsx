@@ -1,6 +1,7 @@
 import { useLayoutEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store/useAppStore'
+import { usePrefsStore } from '@/store/usePrefsStore'
 import { ROLES, CLASSES, TRIADS } from '@/data'
 import type { PairVerdict } from '@/lib/pairScore'
 import './resultGrid.css'
@@ -62,7 +63,7 @@ interface GridTableProps {
  */
 export function GridTable({ characters, interactive = true, highlight = null }: GridTableProps) {
   const { t } = useTranslation()
-  const language = useAppStore((s) => s.language)
+  const language = usePrefsStore((s) => s.language)
   const names = useAppStore((s) => s.names)
   const constructs = useAppStore((s) => s.constructs)
 

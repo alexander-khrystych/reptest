@@ -1,10 +1,27 @@
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useSessionStore, type ObserverStatus } from '@/session/useSessionStore'
+import { leaveRoom } from '@/session/session'
 import { NavControls } from '@/components/NavControls'
 import { ResultScreen } from './ResultScreen'
 
 const primaryBtn = 'rounded-[9px] bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-2'
+
+/** Observer control to leave the broadcast (in the header, left of the language selector). Idle it
+ *  matches the language/theme buttons; hover matches the "Start over" button. Fixed label width so
+ *  it's the same size across EN/UA/RU. */
+function LeaveBroadcastButton() {
+  const { t } = useTranslation()
+  return (
+    <button
+      type="button"
+      onClick={leaveRoom}
+      className="flex h-9 items-center justify-center rounded-lg border border-line bg-card px-3 text-sm text-ink transition hover:border-triad hover:bg-triad/10 hover:text-triad"
+    >
+      <span className="w-[164px] truncate text-center">{t('sharing.leave')}</span>
+    </button>
+  )
+}
 
 function ObserverNav({ live }: { live: boolean }) {
   const { t } = useTranslation()
@@ -17,7 +34,7 @@ function ObserverNav({ live }: { live: boolean }) {
         </span>
       )}
       <span className="flex-1" />
-      {live && <span className="hidden text-xs text-ink-2 sm:inline">{t('sharing.observerNote')}</span>}
+      {live && <LeaveBroadcastButton />}
       <NavControls />
     </nav>
   )

@@ -4,6 +4,7 @@ import './index.css'
 import App from '@/App'
 import { initI18n } from '@/i18n'
 import { useAppStore } from '@/store/useAppStore'
+import { usePrefsStore } from '@/store/usePrefsStore'
 import { validateGridData } from '@/data'
 import { initSession } from '@/session/session'
 
@@ -18,8 +19,8 @@ if (import.meta.env.DEV) {
   ;(window as unknown as Record<string, unknown>).store = useAppStore
 }
 
-// The store (with its persisted language/theme) is the source of truth; mirror it onto <html>.
-const { language, theme } = useAppStore.getState()
+// Prefs (global, shared across testee/observer) are the source of truth; mirror onto <html>.
+const { language, theme } = usePrefsStore.getState()
 initI18n(language)
 
 const root = document.documentElement
@@ -28,7 +29,7 @@ const applyPrefs = (lang: string, mode: string) => {
   root.lang = lang
 }
 applyPrefs(language, theme)
-useAppStore.subscribe((s) => applyPrefs(s.language, s.theme))
+usePrefsStore.subscribe((s) => applyPrefs(s.language, s.theme))
 
 // Boot session sharing: connect as observer for a /w/<room> link, or silently resume a testee's
 // previously-shared room after a reload.

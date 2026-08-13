@@ -23,16 +23,20 @@ export interface BoardSnapshot {
   constructs: WireConstruct[]
 }
 
-/** testee → room (observers' messages are dropped by the room). */
+/** client → room. The room honours snapshot/approve/reject only from the testee; from an observer
+ *  the sole accepted message is a deliberate `leave` (everything else is dropped — read-only). */
 export type ClientMsg =
   | { t: 'snapshot'; board: BoardSnapshot }
   | { t: 'approve' }
   | { t: 'reject' }
+  | { t: 'leave' }
 
 /** room → clients. */
 export type ServerMsg =
   // → testee: presence + approval, so it can derive listening vs broadcasting and show the popup.
   | { t: 'state'; observers: number; approved: boolean }
+  // → testee: the observer deliberately left the broadcast, so sharing turns off (→ Silent).
+  | { t: 'terminated' }
   // → observer: the approval lifecycle.
   | { t: 'waiting' }
   | { t: 'admitted' }
