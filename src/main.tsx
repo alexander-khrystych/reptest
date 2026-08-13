@@ -7,6 +7,8 @@ import { useAppStore } from '@/store/useAppStore'
 import { usePrefsStore } from '@/store/usePrefsStore'
 import { validateGridData } from '@/data'
 import { initSession } from '@/session/session'
+import { RESUME_CODE } from '@/session/config'
+import { consumeResumeCode } from '@/lib/resume'
 
 // Fail loudly in dev if the fixed roles/classes/triads ever drift out of shape.
 if (import.meta.env.DEV) {
@@ -31,12 +33,25 @@ const applyPrefs = (lang: string, mode: string) => {
 applyPrefs(language, theme)
 usePrefsStore.subscribe((s) => applyPrefs(s.language, s.theme))
 
-// Boot session sharing: connect as observer for a /w/<room> link, or silently resume a testee's
-// previously-shared room after a reload.
-initSession()
+const finishBoot = () => {
+  // Boot session sharing: connect as observer for a /w/<room> link, or silently resume a testee's
+  // previously-shared room after a reload.
+  initSession()
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+}
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+// A `/r/<code>` resume link fetches the state from the relay's KV, validates it, and rehydrates the
+// store before the first render (the index.html loader shows meanwhile); then the code is cleaned
+// out of the address bar. A resumed session always starts silent (session state isn't restored).
+if (RESUME_CODE) {
+  consumeResumeCode(RESUME_CODE).finally(() => {
+    history.replaceState(null, '', '/')
+    finishBoot()
+  })
+} else {
+  finishBoot()
+}

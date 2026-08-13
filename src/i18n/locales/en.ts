@@ -14,6 +14,12 @@ export const en = {
     back: 'Back',
     next: 'Next',
   },
+  // Header title per flow (shown top-left in place of the app name).
+  flow: {
+    characters: 'Characters',
+    constructs: 'Constructs',
+    grid: 'Grid',
+  },
   names: {
     progress: 'Names',
     hint: 'tap any card to edit',
@@ -142,6 +148,26 @@ export const en = {
     ok: 'OK',
     leave: 'Leave broadcast',
     observerLeftToast: 'The observer left the session.',
+  },
+  save: {
+    button: 'Save',
+    title: 'Save and resume later',
+    info: "You can resume your test later from this point by using the link below. If you'll make some more progress after saving this link, open this dialog again and re-save a new link.",
+    linkLabel: 'save and resume link',
+    hint: 'click to copy',
+    close: 'Close',
+    generating: 'Generating link…',
+    error: "Couldn't reach the server. Download a save file below instead.",
+    download: 'Download a save file (works offline)',
+  },
+  resumeDlg: {
+    title: 'Resume a saved test',
+    linkLabel: 'resume link',
+    linkPlaceholder: 'paste your resume link',
+    go: 'Resume',
+    or: 'or',
+    chooseFile: 'Open a save file',
+    error: "That link or file couldn't be read.",
   },
 }
 

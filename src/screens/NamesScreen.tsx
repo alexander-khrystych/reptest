@@ -150,7 +150,6 @@ export function NamesScreen() {
           const active = i === nameIndex
           const clickable = canEdit(i)
           const text = committed ? names[i] : showsDraft ? drafts[i] : ''
-          const showIndex = committed || showsDraft || active
           return (
             <button
               key={i}
@@ -167,12 +166,7 @@ export function NamesScreen() {
                     : `border-dashed border-line bg-transparent ${clickable ? 'hover:border-ink-3' : 'cursor-default'}`,
               ].join(' ')}
             >
-              <span
-                className={`font-mono text-[9.5px] leading-none ${active ? 'text-primary' : 'text-ink-3'} ${showIndex ? '' : 'invisible'}`}
-              >
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <span className="mt-1 flex flex-1 items-center">
+              <span className="flex flex-1 items-center">
                 <span
                   className={`line-clamp-2 w-full text-[14px] leading-tight ${committed ? 'text-ink' : 'text-ink-2'}`}
                 >

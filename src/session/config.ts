@@ -15,6 +15,10 @@ export const OBSERVER_ROOM: string | null = match ? match[1] : null
 export const IS_OBSERVER = OBSERVER_ROOM !== null
 export const ROLE: Role = IS_OBSERVER ? 'observer' : 'testee'
 
+/** The code from a `/r/<code>` resume link, or null. Testee-only (never combined with observer). */
+const resumeMatch = path.match(/^\/r\/([A-Za-z0-9_-]+)\/?$/)
+export const RESUME_CODE: string | null = !IS_OBSERVER && resumeMatch ? resumeMatch[1] : null
+
 /** Host (no protocol) of the relay Worker. `VITE_PARTYKIT_HOST` in prod; wrangler dev locally. */
 export const PARTYKIT_HOST: string = import.meta.env.VITE_PARTYKIT_HOST || 'localhost:8787'
 

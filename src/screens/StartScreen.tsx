@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store/useAppStore'
+import { ResumeDialog } from '@/components/ResumeDialog'
 import { TRIADS, GRID_SIZE } from '@/data'
 
 // --- TEMPORARY testing shortcut (remove later): jump to a filled result grid with randomly
@@ -122,6 +124,7 @@ function loadDemoResult() {
 export function StartScreen() {
   const { t } = useTranslation()
   const startTest = useAppStore((s) => s.startTest)
+  const [resumeOpen, setResumeOpen] = useState(false)
 
   return (
     <div className="flex min-h-[52vh] flex-col items-center justify-center gap-3.5">
@@ -129,7 +132,7 @@ export function StartScreen() {
 
       <button
         type="button"
-        className="min-w-[280px] rounded-[9px] bg-primary px-5 py-3.5 text-[15px] font-medium text-white hover:bg-primary-2"
+        className="w-[328px] rounded-[9px] bg-primary px-5 py-3.5 text-[15px] font-medium text-white hover:bg-primary-2"
         onClick={startTest}
       >
         {t('start.start')}
@@ -137,10 +140,13 @@ export function StartScreen() {
 
       <button
         type="button"
-        className="min-w-[280px] rounded-[9px] border border-line bg-transparent px-5 py-3.5 text-[15px] text-ink hover:border-ink-3"
+        onClick={() => setResumeOpen(true)}
+        className="w-[328px] rounded-[9px] border border-line bg-transparent px-5 py-3.5 text-[15px] text-ink hover:border-ink-3"
       >
         {t('start.resume')}
       </button>
+
+      {resumeOpen && <ResumeDialog onClose={() => setResumeOpen(false)} />}
 
       {/* TEMPORARY: preview the result grid without running the whole test. */}
       <button
@@ -148,7 +154,7 @@ export function StartScreen() {
         onClick={loadDemoResult}
         className="mt-6 rounded-[9px] border border-dashed border-ink-3 px-4 py-2 text-xs text-ink-3 hover:text-ink"
       >
-        🧪 Demo result grid (testing)
+        Demo result grid
       </button>
     </div>
   )

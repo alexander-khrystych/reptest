@@ -102,10 +102,7 @@ export function ElicitationScreen() {
                         : 'border-line bg-card hover:border-ink-3',
                 ].join(' ')}
               >
-                <span className="absolute right-3 top-2 font-mono text-[9.5px] leading-none text-ink-3">
-                  {String(pos + 1).padStart(2, '0')}
-                </span>
-                <span className="line-clamp-2 pr-5 text-[18px] font-medium text-ink">{nameOf(pos)}</span>
+                <span className="line-clamp-2 text-[18px] font-medium text-ink">{nameOf(pos)}</span>
                 <span
                   className={`mt-2 font-mono text-[10px] ${odd ? 'text-contrast' : isAlike ? 'text-emergent' : 'text-ink-3'}`}
                 >
@@ -137,10 +134,7 @@ export function ElicitationScreen() {
                   sel ? 'border-emergent bg-emergent-tint' : 'border-line bg-card hover:border-ink-3',
                 ].join(' ')}
               >
-                <span className={`font-mono text-[9px] leading-none text-ink-3 ${sel ? '' : 'invisible'}`}>
-                  {String(pos + 1).padStart(2, '0')}
-                </span>
-                <span className="mt-0.5 line-clamp-1 text-[13.5px] leading-tight text-ink">{nameOf(pos)}</span>
+                <span className="line-clamp-1 text-[13.5px] leading-tight text-ink">{nameOf(pos)}</span>
                 {sel && (
                   <span className="absolute right-2.5 top-1/2 grid h-[18px] w-[18px] -translate-y-1/2 place-items-center rounded-full bg-emergent text-[11px] font-bold text-white">
                     ✓

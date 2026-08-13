@@ -27,7 +27,7 @@ function ObserverNav({ live }: { live: boolean }) {
   const { t } = useTranslation()
   return (
     <nav className="rg-noprint mb-7 flex items-center gap-3 border-b border-line-2 py-4">
-      <span className="text-[15px] font-semibold">{t('appName')}</span>
+      <span className="text-[15px] font-semibold">{t('flow.grid')}</span>
       {live && (
         <span className="inline-flex items-center gap-1.5 rounded-full border border-neg px-2 py-0.5 text-xs font-medium text-neg">
           <span className="h-2 w-2 rounded-full bg-neg" /> {t('sharing.live')}

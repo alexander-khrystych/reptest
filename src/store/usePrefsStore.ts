@@ -20,21 +20,39 @@ interface PrefsState {
  * (board + analysis) stays in useAppStore under its role-scoped key.
  */
 
-// One-time migration: language/theme used to live in the (role-scoped) session store. If the shared
-// prefs key isn't written yet, inherit from the old testee store so nobody's choice resets.
-function initialPrefs(): { language: Locale; theme: Theme } {
-  const fallback = { language: DEFAULT_LOCALE, theme: 'light' as Theme }
+// First-visit locale detection — the client-side stand-in for the Accept-Language header. The
+// browser's ordered `navigator.languages` is the same preference data that header carries.
+// Rule: Ukrainian → uk, Russian → ru, anything else → en.
+function detectLocale(): Locale {
   try {
-    if (typeof localStorage === 'undefined') return fallback
-    if (localStorage.getItem('repgrid:prefs')) return fallback
-    const old = JSON.parse(localStorage.getItem('repgrid') || '{}')?.state
-    if (old && (old.language || old.theme)) {
-      return { language: old.language ?? DEFAULT_LOCALE, theme: old.theme ?? 'light' }
+    const langs = navigator.languages?.length ? navigator.languages : [navigator.language]
+    for (const l of langs) {
+      const code = (l || '').toLowerCase()
+      if (code.startsWith('uk')) return 'uk'
+      if (code.startsWith('ru')) return 'ru'
+      if (code.startsWith('en')) return 'en'
+    }
+  } catch {
+    // navigator unavailable (e.g. SSR) — fall through
+  }
+  return 'en'
+}
+
+// Initial prefs. Precedence: a saved choice (persist rehydrates over this) → migrate from the old
+// pre-split store so nobody's choice resets → detect from the browser locale on first visit.
+function initialPrefs(): { language: Locale; theme: Theme } {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      if (localStorage.getItem('repgrid:prefs')) return { language: DEFAULT_LOCALE, theme: 'light' }
+      const old = JSON.parse(localStorage.getItem('repgrid') || '{}')?.state
+      if (old && (old.language || old.theme)) {
+        return { language: old.language ?? DEFAULT_LOCALE, theme: old.theme ?? 'light' }
+      }
     }
   } catch {
     // ignore malformed storage
   }
-  return fallback
+  return { language: detectLocale(), theme: 'light' }
 }
 
 export const usePrefsStore = create<PrefsState>()(

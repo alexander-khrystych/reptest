@@ -27,8 +27,11 @@ function TesteeApp() {
 
   return (
     <div className="min-h-full">
-      <div className={`mx-auto pb-16 ${wide ? 'max-w-[1600px] px-4' : 'max-w-[1080px] px-6'}`}>
+      {/* Header always spans the Grid-screen width, even when the content below stays narrow. */}
+      <div className="mx-auto max-w-[1600px] px-4">
         <NavBar />
+      </div>
+      <div className={`mx-auto pb-16 ${wide ? 'max-w-[1600px] px-4' : 'max-w-[1080px] px-6'}`}>
         {/* key={phase} re-triggers the fade so each stage flows into the next. */}
         <div key={phase} className="animate-fade">
           <Screen />

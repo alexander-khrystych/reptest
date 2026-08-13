@@ -5,6 +5,7 @@ import {
   type ConnectionContext,
   type WSMessage,
 } from 'partyserver'
+import { nanoid } from 'nanoid'
 import { ROLE_PARAM, type BoardSnapshot, type ClientMsg, type Role, type ServerMsg } from '../src/session/protocol'
 
 // `Env` (with the `Session` Durable Object binding) is declared globally in
@@ -178,8 +179,52 @@ export class Session extends Server<Env> {
   }
 }
 
+// ---- resume storage (progress save & resume) --------------------------------------------------
+// Short code → test-state JSON, kept permanently in KV. Read-side validation is the client's job
+// (Zod); the Worker just stores opaque strings with a size cap and generous CORS.
+const CORS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+}
+const MAX_RESUME_BYTES = 128 * 1024
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, 'Content-Type': 'application/json' },
+  })
+}
+
+async function handleResume(request: Request, env: Env, url: URL): Promise<Response> {
+  if (request.method === 'OPTIONS') return new Response(null, { headers: CORS })
+
+  // POST /resume → store the state, return a short code.
+  if (request.method === 'POST' && url.pathname === '/resume') {
+    const body = await request.text()
+    if (!body || body.length > MAX_RESUME_BYTES) return jsonResponse({ error: 'bad-size' }, 413)
+    const code = nanoid(9) // `/r/` + 9 = 12 chars after the domain
+    await env.RESUME.put(code, body) // no expiration → permanent
+    return jsonResponse({ code })
+  }
+
+  // GET /resume/:code → return the stored state verbatim.
+  if (request.method === 'GET' && url.pathname.startsWith('/resume/')) {
+    const code = url.pathname.slice('/resume/'.length)
+    const data = code ? await env.RESUME.get(code) : null
+    if (data === null) return jsonResponse({ error: 'not-found' }, 404)
+    return new Response(data, { headers: { ...CORS, 'Content-Type': 'application/json' } })
+  }
+
+  return jsonResponse({ error: 'bad-request' }, 400)
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url)
+    if (url.pathname === '/resume' || url.pathname.startsWith('/resume/')) {
+      return handleResume(request, env, url)
+    }
     return (
       (await routePartykitRequest(request, env, { cors: true })) ??
       new Response('Not found', { status: 404 })

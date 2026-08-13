@@ -5,11 +5,11 @@ export type Locale = (typeof LOCALES)[number]
 /** Ukrainian is the default per spec. */
 export const DEFAULT_LOCALE: Locale = 'uk'
 
-/** Display labels shown in the language dropdown — UA (not `uk`), EN, ru. */
+/** Display labels shown in the language dropdown — UA (not `uk`), EN, RU. */
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: 'EN',
   uk: 'UA',
-  ru: 'ru',
+  ru: 'RU',
 }
 
 export function isLocale(value: string): value is Locale {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useSessionStore } from '@/session/useSessionStore'
@@ -10,6 +10,7 @@ import {
   enableShare,
   rejectObserver,
 } from '@/session/session'
+import { CopyLinkBox } from './CopyLinkBox'
 
 const neutralBtn = 'rounded-[9px] border border-line px-4 py-2 text-sm text-ink hover:border-ink-3'
 const primaryBtn = 'rounded-[9px] bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-2'
@@ -36,22 +37,6 @@ function Switch({ on, onChange, label }: { on: boolean; onChange: () => void; la
   )
 }
 
-function ClipboardIcon() {
-  return (
-    <svg
-      className="h-4 w-4 flex-none text-ink-3"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden
-    >
-      <rect x="9" y="9" width="11" height="11" rx="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  )
-}
-
 /** The Sharing menu: on/off toggle, the short observer link (click anywhere to copy), and the
  *  live observer count. Turning on is always Silent → Listening; off is always → Silent. */
 function SharePopup() {
@@ -59,19 +44,7 @@ function SharePopup() {
   const shareEnabled = useSessionStore((s) => s.shareEnabled)
   const roomId = useSessionStore((s) => s.roomId)
   const observers = useSessionStore((s) => s.observers)
-  const [copied, setCopied] = useState(false)
   const link = shareEnabled && roomId ? observerLink(roomId) : ''
-
-  const copy = async () => {
-    if (!link) return
-    try {
-      await navigator.clipboard.writeText(link)
-    } catch {
-      // Clipboard may be blocked (insecure context / permissions) — the link stays visible to copy by hand.
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1800)
-  }
 
   return createPortal(
     <div
@@ -104,18 +77,7 @@ function SharePopup() {
               <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-ink-3">
                 {t('sharing.linkLabel')}
               </p>
-              <button
-                type="button"
-                onClick={copy}
-                className="flex w-full items-center gap-2 rounded-[9px] border border-line bg-canvas px-3 py-2.5 text-left hover:border-ink-3"
-              >
-                <span className="flex-1 truncate font-mono text-[13px] text-ink">{link}</span>
-                {copied ? (
-                  <span className="flex-none text-xs font-semibold text-primary">{t('sharing.copied')}</span>
-                ) : (
-                  <ClipboardIcon />
-                )}
-              </button>
+              <CopyLinkBox link={link} />
               <p className="mt-1.5 text-xs text-ink-3">{t('sharing.linkHint')}</p>
             </div>
           )}

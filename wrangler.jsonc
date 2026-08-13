@@ -1,14 +1,37 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  // The real-time relay for session sharing. Deployed separately from the Pages frontend
-  // (`pnpm party:deploy`); the app connects to it via VITE_PARTYKIT_HOST. Runs $0 on the
-  // Workers Free plan — one SQLite-backed Durable Object per room, with hibernation.
-  "name": "reptest-relay",
-  "main": "party/server.ts",
-  "compatibility_date": "2026-08-01",
-  "observability": { "enabled": true },
-  "durable_objects": {
-    "bindings": [{ "name": "Session", "class_name": "Session" }]
-  },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Session"] }]
+	"$schema": "node_modules/wrangler/config-schema.json",
+	// The real-time relay for session sharing. Deployed separately from the Pages frontend
+	// (`pnpm party:deploy`); the app connects to it via VITE_PARTYKIT_HOST. Runs $0 on the
+	// Workers Free plan — one SQLite-backed Durable Object per room, with hibernation.
+	"name": "reptest-relay",
+	"main": "party/server.ts",
+	"compatibility_date": "2026-08-01",
+	"observability": {
+		"enabled": true
+	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "Session",
+				"class_name": "Session"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"Session"
+			]
+		}
+	],
+	// Progress save & resume: short codes → test-state JSON, stored permanently (no TTL).
+	// One-time setup: `npx wrangler kv namespace create RESUME`, then paste the printed id below and
+	// redeploy. Local `wrangler dev` simulates this namespace, so the placeholder id is fine there.
+	"kv_namespaces": [
+		{
+			"binding": "RESUME",
+			"id": "6910b66bae6647a1a8c5e98152dd844f"
+		}
+	]
 }

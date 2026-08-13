@@ -3,41 +3,52 @@ import { useAppStore } from '@/store/useAppStore'
 import { GRID_SIZE } from '@/data'
 import { NavControls } from './NavControls'
 import { ShareButton } from './ShareButton'
+import { SaveButton } from './SaveButton'
 
-/** Top nav (testee): brand on the left; stage progress, Share, language + theme on the right. */
+/** Top nav (testee): flow title + progress on the left; Share, language + theme on the right. */
 export function NavBar() {
   const { t } = useTranslation()
   const phase = useAppStore((s) => s.phase)
   const names = useAppStore((s) => s.names)
   const triadIndex = useAppStore((s) => s.triadIndex)
 
-  // Stage progress: committed names, or the current construct number.
+  // Title reflects the current flow (falls back to the app name on the start screen).
+  const title =
+    phase === 'names'
+      ? t('flow.characters')
+      : phase === 'elicitation'
+        ? t('flow.constructs')
+        : phase === 'result'
+          ? t('flow.grid')
+          : t('appName')
+
+  // Progress count: committed names, or the current construct number. None on start/result.
   const progress =
     phase === 'names'
-      ? { label: t('names.progress'), n: names.filter((x) => x.trim() !== '').length }
+      ? names.filter((x) => x.trim() !== '').length
       : phase === 'elicitation'
-        ? { label: t('elicit.progress'), n: triadIndex + 1 }
+        ? triadIndex + 1
         : null
 
   return (
     <nav className="rg-noprint mb-7 flex items-center gap-3 border-b border-line-2 py-4">
-      <span className="text-[15px] font-semibold">{t('appName')}</span>
-      <span className="flex-1" />
+      <span className="text-[15px] font-semibold">{title}</span>
 
-      {progress && (
+      {progress !== null && (
         <span className="hidden items-center gap-2 font-mono text-xs text-ink-2 sm:flex">
-          {progress.label} <b className="font-medium text-ink">{progress.n}</b> / {GRID_SIZE}
+          <b className="font-medium text-ink">{progress}</b> / {GRID_SIZE}
           <span className="ml-1 inline-block h-1 w-[110px] overflow-hidden rounded bg-line align-middle">
             <span
               className="block h-full bg-primary"
-              style={{ width: `${(progress.n / GRID_SIZE) * 100}%` }}
+              style={{ width: `${(progress / GRID_SIZE) * 100}%` }}
             />
           </span>
         </span>
       )}
 
-      {/* Sharing lives once the test has started (nothing to share on the start screen). */}
+      <span className="flex-1" />
       {phase !== 'start' && <ShareButton />}
+      {phase !== 'start' && <SaveButton />}
       <NavControls />
     </nav>
   )
