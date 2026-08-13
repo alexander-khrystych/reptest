@@ -21,6 +21,7 @@ const SCREENS: Record<Phase, ComponentType> = {
 /** The testee's app — the four-phase wizard plus the sharing overlays. */
 function TesteeApp() {
   const phase = useAppStore((s) => s.phase)
+  const demo = useAppStore((s) => s.demo)
   const Screen = SCREENS[phase]
   // The result grid wants the full screen width; the other screens stay narrow.
   const wide = phase === 'result'
@@ -36,7 +37,8 @@ function TesteeApp() {
         <div key={phase} className="animate-fade">
           <Screen />
         </div>
-        {phase !== 'start' && <ResetControl />}
+        {/* Demo results use a Back button (in the header) instead of Start over. */}
+        {phase !== 'start' && !demo && <ResetControl />}
       </div>
       <SessionOverlays />
     </div>

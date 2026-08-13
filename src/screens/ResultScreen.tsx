@@ -7,6 +7,7 @@ import { TableBuilderDialog } from '@/components/TableBuilderDialog'
 import { ExportDialog } from '@/components/ExportDialog'
 import { PairsPanel } from '@/components/PairsPanel'
 import { GridLegend } from '@/components/GridLegend'
+import { dialogFooter, useDialogKeys } from '@/components/dialogKit'
 import { pairScore } from '@/lib/pairScore'
 import { GridTable } from './GridTable'
 import './resultGrid.css'
@@ -76,18 +77,10 @@ export function ResultScreen() {
       .filter((p) => p.a !== null && p.b !== null)
       .map((p) => ({ p, score: pairScore(constructs, p.a as number, p.b as number) }))
 
-  // Close everything on Escape.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      setBuilder(null)
-      setExportOpen(false)
-      setDeleteTarget(null)
-      setDrawerOpen(false)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  // ESC closes the top overlay (the drawer and the builder/export/delete dialogs each register
+  // themselves, so ESC peels them off one at a time). The builder + export dialogs handle their
+  // own keys; here we cover the drawer and the delete-confirm.
+  useDialogKeys(() => setDrawerOpen(false), undefined, drawerOpen)
 
   // Print the export stack once it has rendered, then restore. A unique title keeps saved
   // PDFs from silently overwriting each other.
@@ -133,6 +126,7 @@ export function ResultScreen() {
     if (currentId === deleteTarget.id) setCurrentId(DEFAULT_TABLE_ID)
     setDeleteTarget(null)
   }
+  useDialogKeys(() => setDeleteTarget(null), confirmDelete, !!deleteTarget)
 
   const overlays = (
     <>
@@ -268,14 +262,14 @@ export function ResultScreen() {
           onClick={() => setDeleteTarget(null)}
         >
           <div
-            className="animate-fade relative w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-xl"
+            className="animate-fade relative flex w-full max-w-sm flex-col rounded-2xl border border-line bg-card shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="mb-1 text-base font-semibold">{t('tables.deleteTitle')}</h2>
-            <p className="mb-5 text-sm text-ink-2">
-              {t('tables.deleteBody', { name: deleteTarget.name })}
-            </p>
-            <div className="flex justify-end gap-2.5">
+            <div className="px-6 pb-5 pt-6">
+              <h2 className="mb-1 text-base font-semibold">{t('tables.deleteTitle')}</h2>
+              <p className="text-sm text-ink-2">{t('tables.deleteBody', { name: deleteTarget.name })}</p>
+            </div>
+            <div className={dialogFooter}>
               <button type="button" onClick={() => setDeleteTarget(null)} className={neutralBtn}>
                 {t('tables.cancel')}
               </button>

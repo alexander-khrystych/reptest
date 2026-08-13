@@ -63,48 +63,21 @@
   white-space: normal;
 }
 
-/* valences column — a narrow vertical grouping label left of the class column. Cells are merged
-   (rowspan) per valence and tinted with that valence's colour. Bottom-aligned groups may let
-   their text overflow up into the group above (accepted, per spec), hence overflow: visible. */
-.rg-grid td.val {
-  padding: 2px 0;
-  text-align: center;
-  overflow: visible;
-  border-right: 2px solid var(--ink-3);
-}
-.rg-grid td.val .valt {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  display: inline-block;
-  white-space: nowrap;
-  font-size: 11px;
-  line-height: 1;
-  color: var(--ink);
-}
-.rg-grid td.val-top {
-  vertical-align: top;
-}
-.rg-grid td.val-bottom {
-  vertical-align: bottom;
-}
-.rg-grid td.val-middle {
-  vertical-align: middle;
-}
-.rg-grid td.valhead {
+/* groups row — a merged, colour-grouped band above the character names. `grphead` is the row's
+   label in the class column; `grp` are the merged group cells (their tint is set inline, per
+   group). Long labels wrap within their span rather than clipping. */
+.rg-grid td.grphead {
   background-color: var(--line-2);
-  text-align: center;
-  vertical-align: middle;
-  padding: 4px 0;
-  border-right: 2px solid var(--ink-3);
+  font-size: 11px;
+  color: var(--ink-2);
+  padding: 3px 6px;
 }
-.rg-grid td.valhead .valt {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  display: inline-block;
-  white-space: nowrap;
-  font-size: 10px;
-  letter-spacing: 0.03em;
+.rg-grid td.grp {
+  font-size: 10.5px;
   color: var(--ink);
+  padding: 3px 4px;
+  line-height: 1.15;
+  white-space: normal;
 }
 
 /* body cells */
@@ -177,8 +150,10 @@
 .rg-grid td.pole.em {
   background-color: var(--emergent-tint);
 }
+/* contrast pole — a pale light-blue column; its zebra tint layers on top just like the elicited
+   (emergent) pole's, since the zebra gradient applies to every non-class cell. */
 .rg-grid td.pole.co {
-  background-color: var(--contrast-tint);
+  background-color: rgba(56, 152, 219, 0.14);
 }
 
 /* vertical labels (names row top, roles row bottom) */
@@ -246,7 +221,7 @@
 }
 
 /* zebra: every other construct row is very slightly darker (choices still prevail).
-   Column A (the class column) is excluded so its group colour stays clean. */
+   Column A (the class column) is excluded so it stays a clean, flat label band. */
 .rg-grid tr.zebra td:not(.cls) {
   background-image: linear-gradient(var(--grid-zebra), var(--grid-zebra));
 }

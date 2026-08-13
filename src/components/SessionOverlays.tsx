@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useSessionStore } from '@/session/useSessionStore'
@@ -11,6 +10,7 @@ import {
   rejectObserver,
 } from '@/session/session'
 import { CopyLinkBox } from './CopyLinkBox'
+import { dialogFooter, useDialogKeys } from './dialogKit'
 
 const neutralBtn = 'rounded-[9px] border border-line px-4 py-2 text-sm text-ink hover:border-ink-3'
 const primaryBtn = 'rounded-[9px] bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-2'
@@ -45,6 +45,7 @@ function SharePopup() {
   const roomId = useSessionStore((s) => s.roomId)
   const observers = useSessionStore((s) => s.observers)
   const link = shareEnabled && roomId ? observerLink(roomId) : ''
+  useDialogKeys(closeSharePopup, closeSharePopup)
 
   return createPortal(
     <div
@@ -91,7 +92,7 @@ function SharePopup() {
           )}
         </div>
 
-        <div className="flex justify-end border-t border-line-2 px-6 py-4">
+        <div className={dialogFooter}>
           <button type="button" onClick={closeSharePopup} className={neutralBtn}>
             {t('sharing.close')}
           </button>
@@ -102,20 +103,27 @@ function SharePopup() {
   )
 }
 
-/** Raised when an unapproved observer is waiting. No outside-click dismiss — the testee must
- *  choose. Yes → Broadcasting; No → stay Listening (the observer is told and returns to start). */
+/** Raised when an unapproved observer is waiting. ESC / outside-click / Deny all reject (→ stay
+ *  Listening; the observer is told and returns to start); Enter / Allow → Broadcasting. */
 function ApprovalPopup() {
   const { t } = useTranslation()
+  useDialogKeys(rejectObserver, approveObserver)
   return createPortal(
     <div
       className="rg-noprint fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4"
       role="dialog"
       aria-modal="true"
+      onClick={rejectObserver}
     >
-      <div className="animate-fade w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-xl">
-        <h2 className="mb-1 text-base font-semibold">{t('sharing.approveTitle')}</h2>
-        <p className="mb-5 text-sm text-ink-2">{t('sharing.approveBody')}</p>
-        <div className="flex justify-end gap-2.5">
+      <div
+        className="animate-fade flex w-full max-w-sm flex-col rounded-2xl border border-line bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 pb-5 pt-6">
+          <h2 className="mb-1 text-base font-semibold">{t('sharing.approveTitle')}</h2>
+          <p className="text-sm text-ink-2">{t('sharing.approveBody')}</p>
+        </div>
+        <div className={dialogFooter}>
           <button type="button" onClick={rejectObserver} className={neutralBtn}>
             {t('sharing.approveNo')}
           </button>
@@ -129,21 +137,31 @@ function ApprovalPopup() {
   )
 }
 
-/** A transient testee notification (e.g. the observer left), auto-cleared after a few seconds. */
-function Toast() {
+/** Testee notification when a waiting observer withdraws its join request. */
+function CanceledNotice() {
   const { t } = useTranslation()
-  const toast = useSessionStore((s) => s.toast)
   const patch = useSessionStore((s) => s.patch)
-  useEffect(() => {
-    if (!toast) return
-    const id = setTimeout(() => patch({ toast: null }), 4000)
-    return () => clearTimeout(id)
-  }, [toast, patch])
-  if (!toast) return null
+  const close = () => patch({ canceledNotice: false })
+  useDialogKeys(close, close)
   return createPortal(
-    <div className="rg-noprint fixed inset-x-0 bottom-5 z-[70] flex justify-center px-4">
-      <div className="animate-fade rounded-full border border-line bg-card px-4 py-2 text-sm text-ink shadow-lg">
-        {t(toast)}
+    <div
+      className="rg-noprint fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={close}
+    >
+      <div
+        className="animate-fade flex w-full max-w-sm flex-col rounded-2xl border border-line bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 pb-5 pt-6">
+          <p className="text-sm text-ink-2">{t('sharing.canceledNotice')}</p>
+        </div>
+        <div className={dialogFooter}>
+          <button type="button" onClick={close} className={primaryBtn}>
+            {t('sharing.ok')}
+          </button>
+        </div>
       </div>
     </div>,
     document.body,
@@ -154,11 +172,12 @@ function Toast() {
 export function SessionOverlays() {
   const popupOpen = useSessionStore((s) => s.popupOpen)
   const pendingApproval = useSessionStore((s) => s.pendingApproval)
+  const canceledNotice = useSessionStore((s) => s.canceledNotice)
   return (
     <>
       {popupOpen && <SharePopup />}
       {pendingApproval && <ApprovalPopup />}
-      <Toast />
+      {canceledNotice && <CanceledNotice />}
     </>
   )
 }

@@ -10,13 +10,13 @@ import type { BoardSnapshot, ClientMsg, ServerMsg } from './protocol'
  * client-side timers, translates room messages into `useSessionStore` state, and pushes board
  * snapshots from `useAppStore`. It is the single place the sharing state machine lives.
  *
- * Timer ownership (kept off the server to stay $0): the 10-minute "nobody joined" and the
- * 60-minute "testee idle" timeouts run here in the browser. The only server-side timer is the
+ * Timer ownership (kept off the server to stay $0): both the "nobody joined" and the "testee
+ * idle" timeouts are 10 minutes and run here in the browser. The only server-side timer is the
  * 30-second grace after the broadcaster disappears (it must survive the testee being gone).
  */
 
 const LISTEN_TIMEOUT_MS = 10 * 60_000 // Listening → Silent if no observer connects
-const IDLE_TIMEOUT_MS = 60 * 60_000 // Broadcasting → Silent after testee inactivity
+const IDLE_TIMEOUT_MS = 10 * 60_000 // Broadcasting → Silent after testee inactivity
 
 let socket: PartySocket | null = null
 let listenTimer: ReturnType<typeof setTimeout> | null = null
@@ -64,10 +64,9 @@ function onTesteeMessage(data: string) {
   } catch {
     return
   }
-  if (msg.t === 'terminated') {
-    // The observer deliberately left → notify + turn sharing off entirely (Broadcasting → Silent).
-    sess().patch({ toast: 'sharing.observerLeftToast' })
-    disableShare()
+  if (msg.t === 'canceled') {
+    // A waiting observer withdrew its join request → close the approval popup + show the notice.
+    sess().patch({ pendingApproval: false, canceledNotice: true })
     return
   }
   if (msg.t !== 'state') return
@@ -183,11 +182,21 @@ export function rejectObserver() {
   sess().patch({ pendingApproval: false })
 }
 
-/** Observer action: deliberately leave the broadcast. Tells the room (which flips the testee to
- *  Silent), then tears down (manual close ⇒ no reconnect) and returns to the start page. */
+/** Observer action: deliberately leave the broadcast. A plain disconnect — the room sees the
+ *  socket close like any other observer drop and flips the testee Broadcasting → Listening (not
+ *  Silent); the room stays open for another observer. Then return to the start page. */
 export function leaveRoom() {
-  sendToRoom({ t: 'leave' })
-  disconnectSocket() // close() flushes the queued 'leave' and prevents a reconnect
+  disconnectSocket() // manual close ⇒ no reconnect; the room drops the testee to Listening
+  setTimeout(() => {
+    window.location.href = '/'
+  }, 80)
+}
+
+/** Observer action while still waiting for approval: withdraw the join request, then leave (same
+ *  redirect as Leave broadcast). The room notifies the testee that the request was canceled. */
+export function cancelRequest() {
+  sendToRoom({ t: 'cancel' })
+  disconnectSocket()
   setTimeout(() => {
     window.location.href = '/'
   }, 80)

@@ -70,6 +70,8 @@ interface AppState {
   /** Monotonic counter bumped on every board change that should be broadcast (see @/session).
    *  Not persisted — a fresh reload re-baselines it. */
   boardRev: number
+  /** The result grid was reached via the demo shortcut (Back-to-start instead of Start over). */
+  demo: boolean
 
   setPhase: (phase: Phase) => void
   setName: (index: number, value: string) => void
@@ -116,6 +118,8 @@ const freshTest = () => ({
   drafts: emptyRow(),
   constructs: emptyConstructs(),
   triadIndex: 0,
+  // True only for the demo-result shortcut, which shows a Back button instead of Start over.
+  demo: false,
   // Custom tables + per-table comparison pairs derive from this grid, so a new test clears both.
   savedTables: [] as SavedTable[],
   pairsByTable: {} as Record<string, CharPair[]>,
@@ -298,6 +302,7 @@ export const useAppStore = create<AppState>()(
               nameIndex: s.nameIndex,
               constructs: s.constructs,
               triadIndex: s.triadIndex,
+              demo: s.demo,
               savedTables: s.savedTables,
               pairsByTable: s.pairsByTable,
               activePairByTable: s.activePairByTable,

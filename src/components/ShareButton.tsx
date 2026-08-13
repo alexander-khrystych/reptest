@@ -8,6 +8,12 @@ const DOT: Record<ShareMode, string> = {
   listening: 'bg-[#e0a82e]',
   broadcasting: 'bg-neg',
 }
+// A soft glow around the lit indicator, like a physical light. Grey (silent) has none.
+const GLOW: Record<ShareMode, string> = {
+  silent: '',
+  listening: 'shadow-[0_0_6px_2px_#e0a82e]',
+  broadcasting: 'shadow-[0_0_6px_2px_var(--neg)]',
+}
 const LABEL_KEY: Record<ShareMode, string> = {
   silent: 'sharing.modeSilent',
   listening: 'sharing.modeListening',
@@ -35,7 +41,7 @@ export function ShareButton() {
         framed ? 'border-primary' : 'border-line hover:border-ink-3',
       ].join(' ')}
     >
-      <span className={`h-2.5 w-2.5 flex-none rounded-full ${DOT[mode]}`} aria-hidden />
+      <span className={`h-2.5 w-2.5 flex-none rounded-full ${DOT[mode]} ${GLOW[mode]}`} aria-hidden />
       {/* Fixed width ≥ the widest of all 9 mode×language labels (ru "…Транслируется" ≈ 245px),
           with headroom; shrink-0 so a tight nav can't compress and clip it. Left-aligned, so the
           button never resizes when the mode or language changes. */}

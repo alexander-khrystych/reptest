@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useDialogKeys } from './dialogKit'
 
 interface Props {
   mode: 'new' | 'rename'
@@ -30,6 +31,7 @@ export function TableBuilderDialog({ mode, initialName = '', names, onSave, onCl
   const save = () => {
     if (canSave) onSave(name.trim(), picked.slice().sort((a, b) => a - b))
   }
+  useDialogKeys(onClose, save)
 
   return (
     <div
@@ -63,9 +65,6 @@ export function TableBuilderDialog({ mode, initialName = '', names, onSave, onCl
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') save()
-            }}
             placeholder={t('tables.namePlaceholder')}
             className="w-full rounded-[9px] border border-line bg-card px-3.5 py-2.5 text-[15px] text-ink outline-none focus:border-primary focus:shadow-[0_0_0_3px_var(--primary-tint)]"
           />

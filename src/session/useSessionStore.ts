@@ -27,8 +27,8 @@ export interface SessionState {
   popupOpen: boolean
   /** Observer-side connection lifecycle (unused by the testee). */
   observerStatus: ObserverStatus
-  /** Transient testee notification (an i18n key), auto-cleared by the overlay; null when none. */
-  toast: string | null
+  /** Testee: a waiting observer canceled its join request → show the "canceled" notification dialog. */
+  canceledNotice: boolean
 
   patch: (p: Partial<SessionState>) => void
 }
@@ -49,7 +49,7 @@ export const useSessionStore = create<SessionState>()(
       pendingApproval: false,
       popupOpen: false,
       observerStatus: 'connecting',
-      toast: null,
+      canceledNotice: false,
       patch: (p) => set(p),
     }),
     {

@@ -11,6 +11,8 @@ export function NavBar() {
   const phase = useAppStore((s) => s.phase)
   const names = useAppStore((s) => s.names)
   const triadIndex = useAppStore((s) => s.triadIndex)
+  const demo = useAppStore((s) => s.demo)
+  const reset = useAppStore((s) => s.reset)
 
   // Title reflects the current flow (falls back to the app name on the start screen).
   const title =
@@ -32,7 +34,21 @@ export function NavBar() {
 
   return (
     <nav className="rg-noprint mb-7 flex items-center gap-3 border-b border-line-2 py-4">
-      <span className="text-[15px] font-semibold">{title}</span>
+      {/* Title stacks a small red "(demo)" beneath it — kept shorter than the h-9 controls so the
+          nav height never grows. On the demo grid, Back (→ start) sits right of the title. */}
+      <span className="flex flex-col justify-center leading-none">
+        <span className="text-[15px] font-semibold">{title}</span>
+        {demo && <span className="mt-0.5 text-[10px] font-medium leading-none text-triad">(demo)</span>}
+      </span>
+      {demo && (
+        <button
+          type="button"
+          onClick={reset}
+          className="flex h-9 items-center gap-1 rounded-lg border border-line bg-transparent px-3 text-sm text-ink hover:border-ink-3"
+        >
+          ← {t('common.back')}
+        </button>
+      )}
 
       {progress !== null && (
         <span className="hidden items-center gap-2 font-mono text-xs text-ink-2 sm:flex">
@@ -47,8 +63,9 @@ export function NavBar() {
       )}
 
       <span className="flex-1" />
-      {phase !== 'start' && <ShareButton />}
-      {phase !== 'start' && <SaveButton />}
+      {/* Sharing + Save make no sense for the demo grid (throwaway sample data). */}
+      {phase !== 'start' && !demo && <ShareButton />}
+      {phase !== 'start' && !demo && <SaveButton />}
       <NavControls />
     </nav>
   )

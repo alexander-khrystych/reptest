@@ -107,6 +107,7 @@ function loadDemoResult() {
 
   useAppStore.setState({
     phase: 'result',
+    demo: true,
     names,
     drafts: Array.from({ length: GRID_SIZE }, () => ''),
     nameIndex: 0,

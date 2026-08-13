@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { buildSaveFile, createResumeLink } from '@/lib/resume'
 import { CopyLinkBox } from './CopyLinkBox'
+import { useDialogKeys } from './dialogKit'
 
 const neutralBtn = 'rounded-[9px] border border-line px-4 py-2 text-sm text-ink hover:border-ink-3'
 
@@ -23,6 +24,7 @@ function SaveDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   const [link, setLink] = useState<string | null>(null)
   const [error, setError] = useState(false)
+  useDialogKeys(onClose, onClose)
 
   useEffect(() => {
     let alive = true

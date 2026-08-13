@@ -24,19 +24,20 @@ export interface BoardSnapshot {
 }
 
 /** client → room. The room honours snapshot/approve/reject only from the testee; from an observer
- *  the sole accepted message is a deliberate `leave` (everything else is dropped — read-only). */
+ *  the sole accepted message is `cancel` (withdraw a pending join request). A deliberate "leave"
+ *  needs no message — the observer just closes its socket, which the room treats as a normal drop. */
 export type ClientMsg =
   | { t: 'snapshot'; board: BoardSnapshot }
   | { t: 'approve' }
   | { t: 'reject' }
-  | { t: 'leave' }
+  | { t: 'cancel' }
 
 /** room → clients. */
 export type ServerMsg =
   // → testee: presence + approval, so it can derive listening vs broadcasting and show the popup.
   | { t: 'state'; observers: number; approved: boolean }
-  // → testee: the observer deliberately left the broadcast, so sharing turns off (→ Silent).
-  | { t: 'terminated' }
+  // → testee: a waiting observer canceled its join request (close the approval dialog + notify).
+  | { t: 'canceled' }
   // → observer: the approval lifecycle.
   | { t: 'waiting' }
   | { t: 'admitted' }

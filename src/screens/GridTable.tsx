@@ -12,36 +12,24 @@ const colLetter = (i: number) => String.fromCharCode(66 + i)
 const POLE_CAP = 140 // max X/Y column width; longer values wrap to a second line
 const POLE_MIN = 64
 const POLE_PAD = 22
-const VALENCE_W = 26 // the narrow (vertical-text) valences column
-
-// Pale group colours shared by the class column (A2:A23) and the valences column.
-const GROUP_BG = {
-  violet: 'rgba(142,68,173,0.15)',
-  orange: 'rgba(230,126,34,0.17)',
-  blue: 'rgba(41,128,185,0.15)',
-  yellow: 'rgba(241,196,15,0.24)',
-  pink: 'rgba(232,67,147,0.14)',
-}
-const classGroupBg = (k: number): string => {
-  if (k <= 5) return GROUP_BG.violet // A2:A7 (family — first class recoloured red → violet)
-  if (k <= 8) return GROUP_BG.orange // A8:A10
-  if (k <= 14) return GROUP_BG.blue // A11:A16
-  if (k <= 18) return GROUP_BG.yellow // A17:A20
-  return GROUP_BG.pink // A21:A23
-}
 
 /**
- * Valence groups — a higher grouping of the class rows, shown merged (rowspan) in the vertical
- * valences column. `start` is the 0-based construct index of the group's first row; `span` the
- * number of rows. Labels are vertically centred in the merged cell.
+ * The seven character groups, keyed by the character's fixed position (0 = Me, 1–4 = family, …).
+ * Each carries a pale tint — shown on the merged "groups" row and echoed on the names row below it
+ * — plus an i18n label. Keying on the character index (not the display column) means a custom
+ * subset keeps every character's own group colour, while the complete table reproduces the
+ * B / C:F / G:J / K:M / N:Q / R:T / U:W letter ranges from the spec exactly.
  */
-const VALENCES = [
-  { start: 0, span: 6, key: 'valFamily', color: GROUP_BG.violet }, // A2:A7
-  { start: 6, span: 3, key: 'valCloseOnes', color: GROUP_BG.orange }, // A8:A10
-  { start: 9, span: 6, key: 'valValences', color: GROUP_BG.blue }, // A11:A16
-  { start: 15, span: 4, key: 'valAuthorities', color: GROUP_BG.yellow }, // A17:A20
-  { start: 19, span: 3, key: 'valValues', color: GROUP_BG.pink }, // A21:A23
+const GROUPS = [
+  { max: 0, key: 'groupMe', color: 'rgba(231,76,60,0.16)' }, // B — me (red)
+  { max: 4, key: 'groupFamily', color: 'rgba(142,68,173,0.15)' }, // C:F — family (violet)
+  { max: 8, key: 'groupClose', color: 'rgba(230,126,34,0.17)' }, // G:J — close ones (orange)
+  { max: 11, key: 'groupSituational', color: 'rgba(41,128,185,0.15)' }, // K:M — situational (blue)
+  { max: 15, key: 'groupRelations', color: 'rgba(241,196,15,0.24)' }, // N:Q — relationships (yellow)
+  { max: 18, key: 'groupAuthority', color: 'rgba(232,67,147,0.14)' }, // R:T — authority (pink)
+  { max: 21, key: 'groupValues', color: 'rgba(39,174,96,0.16)' }, // U:W — values (green)
 ] as const
+const groupOf = (pos: number) => GROUPS.find((g) => pos <= g.max) ?? GROUPS[GROUPS.length - 1]
 
 interface GridTableProps {
   /** 0-based name positions to render as character columns, in display order. */
@@ -55,11 +43,14 @@ interface GridTableProps {
 /**
  * The repertory grid itself, rendering an arbitrary subset of the character columns.
  *
- * The row structure is invariant — the valences column, class column (A) and both poles (X =
+ * The row structure is invariant — the group row, the class column (A) and both poles (X =
  * elicited, Y = contrast) are always present; only which characters (B, C, …) appear varies.
  * `characters` = [0..21] reproduces the complete default table; a shorter list is a custom
- * comparison. Each row derives from its construct: a ✓ on the emergent-tint fill where a card
- * is in the alike pair or was selected, a pale-blue frame (on top) on the three triad cards.
+ * comparison. Each body row derives from its construct: a ✓ on the emergent-tint fill where a
+ * card is in the alike pair or was selected, a pale-blue frame (on top) on the three triad cards.
+ *
+ * Row numbering (left gutter): the character/names row is 0, the 22 construct rows are 1–22, and
+ * the roles row is 23; the merged groups row above the names carries no number.
  */
 export function GridTable({ characters, interactive = true, highlight = null }: GridTableProps) {
   const { t } = useTranslation()
@@ -96,7 +87,16 @@ export function GridTable({ characters, interactive = true, highlight = null }: 
   const hlCell = (r: number, c: number) =>
     interactive && sel && (sel[0] === r || sel[1] === c) ? ' rg-hl' : ''
 
-  const minWidth = 22 + VALENCE_W + 180 + 34 * characters.length + poleW[0] + poleW[1]
+  // Merge consecutive same-group character columns into the colSpans of the "groups" row.
+  const groupRuns: { key: string; color: string; span: number }[] = []
+  characters.forEach((pos) => {
+    const g = groupOf(pos)
+    const last = groupRuns[groupRuns.length - 1]
+    if (last && last.key === g.key) last.span++
+    else groupRuns.push({ key: g.key, color: g.color, span: 1 })
+  })
+
+  const minWidth = 22 + 180 + 34 * characters.length + poleW[0] + poleW[1]
 
   return (
     <div className="rg-scroll">
@@ -105,7 +105,6 @@ export function GridTable({ characters, interactive = true, highlight = null }: 
       <table className="rg-grid" style={{ width: '100%', minWidth }}>
         <colgroup>
           <col style={{ width: 22 }} />
-          <col style={{ width: VALENCE_W }} />
           <col style={{ width: 180 }} />
           {characters.map((_, i) => (
             <col key={i} style={{ width: 34 }} />
@@ -115,10 +114,9 @@ export function GridTable({ characters, interactive = true, highlight = null }: 
         </colgroup>
 
         <thead>
-          {/* column-letter gutter (the valences column carries no letter) */}
+          {/* column-letter gutter */}
           <tr>
             <th className="gc cnr" />
-            <th className="gc" />
             <th className="gc">A</th>
             {characters.map((_, i) => (
               <th key={i} className="gc">
@@ -129,12 +127,22 @@ export function GridTable({ characters, interactive = true, highlight = null }: 
             <th className="gc">Y</th>
           </tr>
 
-          {/* row 1 — names (vertical, colour-grouped) + pole column titles */}
+          {/* groups row — merged, colour-grouped labels above the character names */}
           <tr>
-            <td className="rnum">1</td>
-            <td className="valhead">
-              <span className="valt">{t('result.valencesCol')}</span>
-            </td>
+            <td className="rnum" />
+            <td className="grphead">{t('result.groups')}</td>
+            {groupRuns.map((run, i) => (
+              <td key={i} colSpan={run.span} className="grp" style={{ backgroundColor: run.color }}>
+                {t(`result.${run.key}`)}
+              </td>
+            ))}
+            <td className="pole" />
+            <td className="pole" />
+          </tr>
+
+          {/* row 0 — names (vertical, colour-grouped) + pole column titles */}
+          <tr>
+            <td className="rnum">0</td>
             <td className="diag">
               <svg preserveAspectRatio="none" viewBox="0 0 100 100">
                 <line x1="0" y1="0" x2="100" y2="100" />
@@ -143,7 +151,11 @@ export function GridTable({ characters, interactive = true, highlight = null }: 
               <span className="lbl bl">{t('result.classes')}</span>
             </td>
             {characters.map((pos, i) => (
-              <td key={i} className={`lab namerow b-bottom${hlCol(i)}`}>
+              <td
+                key={i}
+                className={`lab namerow b-bottom${hlCol(i)}`}
+                style={{ backgroundColor: groupOf(pos).color }}
+              >
                 <span className="t">{names[pos] || '—'}</span>
               </td>
             ))}
@@ -156,22 +168,10 @@ export function GridTable({ characters, interactive = true, highlight = null }: 
           {constructs.map((c, k) => {
             const triad = TRIADS[k].map((p) => p - 1)
             const odd = c.oddPos
-            const val = VALENCES.find((g) => g.start === k) // render the merged cell at group start
             return (
               <tr key={k} className={k % 2 === 1 ? 'zebra' : undefined}>
-                <td className="rnum">{k + 2}</td>
-                {val && (
-                  <td
-                    rowSpan={val.span}
-                    className="val val-middle"
-                    style={{ backgroundColor: val.color }}
-                  >
-                    <span className="valt">{t(`result.${val.key}`)}</span>
-                  </td>
-                )}
-                <td className={`cls b-right${hlRow(k)}`} style={{ backgroundColor: classGroupBg(k) }}>
-                  {classes[k]}
-                </td>
+                <td className="rnum">{k + 1}</td>
+                <td className={`cls b-right${hlRow(k)}`}>{classes[k]}</td>
                 {characters.map((pos, i) => {
                   const inTriad = triad.includes(pos)
                   const matched = (odd !== null && inTriad && pos !== odd) || c.selected.includes(pos)
@@ -199,10 +199,9 @@ export function GridTable({ characters, interactive = true, highlight = null }: 
             )
           })}
 
-          {/* row 24 — roles (vertical, colour-grouped); the valences column is empty here */}
+          {/* row 23 — roles (vertical) */}
           <tr>
-            <td className="rnum">24</td>
-            <td className="val" />
+            <td className="rnum">23</td>
             <td className="diag">
               <svg preserveAspectRatio="none" viewBox="0 0 100 100">
                 <line x1="0" y1="100" x2="100" y2="0" />

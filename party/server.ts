@@ -98,10 +98,11 @@ export class Session extends Server<Env> {
     } catch {
       return
     }
-    // Read-only: an observer's only accepted message is a deliberate `leave`; everything else is
-    // silently ignored (the board is never mutated by an observer).
+    // Read-only: the sole observer message honoured is `cancel` (withdraw a pending request);
+    // everything else is silently ignored (the board is never mutated by an observer). A deliberate
+    // "leave" is just a socket close — handled by onClose like any other observer drop.
     if (!conn.tags.includes('testee')) {
-      if (msg.t === 'leave') await this.handleObserverLeave(conn)
+      if (msg.t === 'cancel') await this.handleObserverCancel(conn)
       return
     }
     switch (msg.t) {
@@ -141,18 +142,16 @@ export class Session extends Server<Env> {
     }
   }
 
-  /** The observer clicked "Leave broadcast": tell the testee to stop sharing entirely (→ Silent),
-   *  reset the room, and drop this observer. Distinct from a passive disconnect (which only drops
-   *  the testee to Listening and keeps the 30s grace). */
-  private async handleObserverLeave(conn: Connection) {
-    for (const tc of this.getConnections('testee')) this.send(tc, { t: 'terminated' })
-    await this.ctx.storage.delete('approved')
-    await this.ctx.storage.delete('snapshot')
+  /** A waiting (unapproved) observer withdrew its join request: tell the testee to close the
+   *  approval dialog and show the "canceled" notice, then drop this observer. */
+  private async handleObserverCancel(conn: Connection) {
+    for (const tc of this.getConnections('testee')) this.send(tc, { t: 'canceled' })
     try {
-      conn.close(1000, 'left')
+      conn.close(1000, 'canceled')
     } catch {
       // already gone
     }
+    await this.pushStateToTestees(new Set([conn.id]))
   }
 
   async onClose(conn: Connection) {

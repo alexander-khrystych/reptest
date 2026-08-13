@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store/useAppStore'
+import { dialogFooter, useDialogKeys } from './dialogKit'
 
 type Step = 'idle' | 'warn' | 'confirm'
 
-const neutralBtn =
-  'rounded-[9px] border border-line px-4 py-2 text-sm text-ink hover:border-ink-3'
+const neutralBtn = 'rounded-[9px] border border-line px-4 py-2 text-sm text-ink hover:border-ink-3'
 
 /**
  * "Start over" — deliberately parked at the very bottom, far from the main controls, to
@@ -18,6 +18,12 @@ export function ResetControl() {
   const [step, setStep] = useState<Step>('idle')
 
   const close = () => setStep('idle')
+  const confirmReset = () => {
+    reset()
+    close()
+  }
+  // ESC/outside → cancel; Enter → advance (warn) or confirm (confirm).
+  useDialogKeys(close, step === 'warn' ? () => setStep('confirm') : confirmReset, step !== 'idle')
 
   return (
     <>
@@ -33,13 +39,13 @@ export function ResetControl() {
 
       {step !== 'idle' && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+          className="rg-noprint fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
           role="dialog"
           aria-modal="true"
           onClick={close}
         >
           <div
-            className="animate-fade relative w-full max-w-sm rounded-2xl border border-line bg-card p-6 shadow-xl"
+            className="animate-fade relative flex w-full max-w-sm flex-col rounded-2xl border border-line bg-card shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -51,38 +57,30 @@ export function ResetControl() {
               ✕
             </button>
 
-            {step === 'warn' ? (
-              <>
-                <p className="mb-5 mt-1 pr-6 text-sm text-ink-2">{t('reset.warnBody')}</p>
-                <div className="flex justify-end gap-2.5">
-                  <button type="button" onClick={close} className={neutralBtn}>
-                    {t('reset.cancel')}
-                  </button>
-                  <button type="button" onClick={() => setStep('confirm')} className={neutralBtn}>
-                    {t('reset.continue')}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="mb-5 mt-1 pr-6 text-sm text-ink-2">{t('reset.confirmBody')}</p>
-                <div className="flex justify-end gap-2.5">
-                  <button type="button" onClick={close} className={neutralBtn}>
-                    {t('reset.cancel')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      reset()
-                      close()
-                    }}
-                    className="rounded-[9px] bg-triad px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-                  >
-                    {t('reset.confirm')}
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="px-6 pb-5 pt-6">
+              <p className="mt-1 pr-6 text-sm text-ink-2">
+                {step === 'warn' ? t('reset.warnBody') : t('reset.confirmBody')}
+              </p>
+            </div>
+
+            <div className={dialogFooter}>
+              <button type="button" onClick={close} className={neutralBtn}>
+                {t('reset.cancel')}
+              </button>
+              {step === 'warn' ? (
+                <button type="button" onClick={() => setStep('confirm')} className={neutralBtn}>
+                  {t('reset.continue')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={confirmReset}
+                  className="rounded-[9px] bg-triad px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+                >
+                  {t('reset.confirm')}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

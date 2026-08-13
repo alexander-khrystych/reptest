@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useDialogKeys } from './dialogKit'
 
 interface ExportTable {
   id: string
@@ -26,6 +27,7 @@ export function ExportDialog({ tables, onConfirm, onClose }: Props) {
   const [selected, setSelected] = useState<string[]>(tables.map((tb) => tb.id))
   const toggle = (id: string) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
+  useDialogKeys(onClose, () => selected.length > 0 && onConfirm(selected))
 
   return (
     <div

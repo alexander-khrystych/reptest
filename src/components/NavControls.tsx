@@ -50,7 +50,9 @@ export function NavControls() {
   const toggleTheme = usePrefsStore((s) => s.toggleTheme)
 
   return (
-    <>
+    // z-[100] keeps language + theme above any open dialog scrim, so they stay interactive and
+    // clicking them never closes a dialog (even a stacked one).
+    <div className="relative z-[100] flex items-center gap-3">
       <div className="relative">
         <select
           aria-label={t('nav.language')}
@@ -88,6 +90,6 @@ export function NavControls() {
       >
         {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
       </button>
-    </>
+    </div>
   )
 }
