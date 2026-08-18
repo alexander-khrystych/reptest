@@ -158,6 +158,8 @@ export const en = {
     cancelConfirmYes: 'Yes',
     cancelConfirmNo: 'No',
     canceledNotice: 'Join request was canceled by the sender',
+    observerJoined: 'An observer joined the session.',
+    observerLeft: 'An observer left the session.',
   },
   save: {
     button: 'Save',
@@ -174,11 +176,18 @@ export const en = {
     title: 'Resume a saved test',
     linkLabel: 'resume link',
     linkPlaceholder: 'paste your resume link',
+    clear: 'Clear',
     go: 'Resume',
     or: 'or',
     dropText: 'Drag and drop a save file into this area:',
     selectFile: 'Select a save file',
+    removeFile: 'Remove',
     error: "That link or file couldn't be read.",
+    // Two-source confirm (a link and a save file are both provided).
+    twoSources:
+      'You have provided 2 sources of saved test progress. Which one you want to restore the progress from?',
+    useLink: 'Link',
+    useFile: 'Save file',
   },
 }
 

@@ -154,6 +154,8 @@ export const uk: Translation = {
     cancelConfirmYes: 'Так',
     cancelConfirmNo: 'Ні',
     canceledNotice: 'Запит на доступ к сессії був відмінений відправником',
+    observerJoined: 'Спостерігач приєднався до сесії.',
+    observerLeft: 'Спостерігач залишив сесію.',
   },
   save: {
     button: 'Зберегти',
@@ -170,10 +172,16 @@ export const uk: Translation = {
     title: 'Відновити збережений тест',
     linkLabel: 'посилання для відновлення',
     linkPlaceholder: 'вставте посилання для відновлення',
+    clear: 'Очистити',
     go: 'Відновити',
     or: 'або',
     dropText: 'Перетягніть файл збереження в цю область:',
     selectFile: 'Виберіть файл збереження',
+    removeFile: 'Прибрати',
     error: 'Не вдалося прочитати посилання або файл.',
+    twoSources:
+      'Ви надали 2 джерела збереженого прогресу тесту. З якого з них відновити прогрес?',
+    useLink: 'Посилання',
+    useFile: 'Файл',
   },
 }

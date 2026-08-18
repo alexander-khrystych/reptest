@@ -2,6 +2,7 @@ import PartySocket from 'partysocket'
 import { nanoid } from 'nanoid'
 import { useAppStore } from '@/store/useAppStore'
 import { useSessionStore, shareMode, type ShareMode } from './useSessionStore'
+import { useToastStore } from './useToastStore'
 import { IS_OBSERVER, OBSERVER_ROOM, PARTY, PARTYKIT_HOST } from './config'
 import type { BoardSnapshot, ClientMsg, ServerMsg } from './protocol'
 
@@ -22,6 +23,7 @@ let socket: PartySocket | null = null
 let listenTimer: ReturnType<typeof setTimeout> | null = null
 let idleTimer: ReturnType<typeof setTimeout> | null = null
 let lastMode: ShareMode = 'silent'
+let lastJoined = 0 // count of approved+present observers, to fire join/leave bubbles on change
 let boardSubscribed = false
 
 const sess = () => useSessionStore.getState()
@@ -77,6 +79,13 @@ function onTesteeMessage(data: string) {
     // An observer is waiting and we haven't approved → raise the approval popup.
     pendingApproval: msg.observers > 0 && !msg.approved,
   })
+
+  // Notification bubbles: an observer "joined" once it's approved AND present; "left" when that
+  // count drops. Waiting (unapproved) or rejected observers never count, so neither fires.
+  const joined = msg.approved ? msg.observers : 0
+  if (joined > lastJoined) useToastStore.getState().push('sharing.observerJoined')
+  else if (joined < lastJoined) useToastStore.getState().push('sharing.observerLeft')
+  lastJoined = joined
 
   const mode = shareMode(sess())
   const entering = (m: ShareMode) => mode === m && lastMode !== m
@@ -159,6 +168,7 @@ export function enableShare() {
   const roomId = sess().roomId ?? nanoid(10)
   sess().patch({ roomId, shareEnabled: true, observers: 0, approved: false, pendingApproval: false })
   lastMode = 'listening'
+  lastJoined = 0
   connectTestee(roomId)
   ensureListenTimer()
 }
@@ -168,6 +178,7 @@ export function disableShare() {
   cancelListenTimer()
   cancelIdleTimer()
   lastMode = 'silent'
+  lastJoined = 0
   sess().patch({ shareEnabled: false, observers: 0, approved: false, pendingApproval: false })
   disconnectSocket() // the room starts its 30s grace on our close
 }
@@ -216,6 +227,7 @@ export function initSession() {
   const { shareEnabled, roomId } = sess()
   if (shareEnabled && roomId) {
     lastMode = 'listening'
+    lastJoined = 0
     connectTestee(roomId)
     ensureListenTimer()
   }

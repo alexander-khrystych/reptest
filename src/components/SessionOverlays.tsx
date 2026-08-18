@@ -10,6 +10,7 @@ import {
   rejectObserver,
 } from '@/session/session'
 import { CopyLinkBox } from './CopyLinkBox'
+import { Toasts } from './Toasts'
 import { dialogFooter, useDialogKeys } from './dialogKit'
 
 const neutralBtn = 'rounded-[9px] border border-line px-4 py-2 text-sm text-ink hover:border-ink-3'
@@ -178,6 +179,7 @@ export function SessionOverlays() {
       {popupOpen && <SharePopup />}
       {pendingApproval && <ApprovalPopup />}
       {canceledNotice && <CanceledNotice />}
+      <Toasts />
     </>
   )
 }

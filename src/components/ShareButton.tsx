@@ -11,8 +11,8 @@ const DOT: Record<ShareMode, string> = {
 // A soft glow around the lit indicator, like a physical light. Grey (silent) has none.
 const GLOW: Record<ShareMode, string> = {
   silent: '',
-  listening: 'shadow-[0_0_6px_2px_#e0a82e]',
-  broadcasting: 'shadow-[0_0_6px_2px_var(--neg)]',
+  listening: 'shadow-[0_0_4px_1px_#e0a82e]',
+  broadcasting: 'shadow-[0_0_4px_1px_var(--neg)]',
 }
 const LABEL_KEY: Record<ShareMode, string> = {
   silent: 'sharing.modeSilent',
