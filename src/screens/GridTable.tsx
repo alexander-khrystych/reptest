@@ -123,24 +123,36 @@ export function GridTable({ characters, interactive = true, highlight = null }: 
                 {colLetter(i)}
               </th>
             ))}
-            <th className="gc">X</th>
+            <th className="gc b-left">X</th>
             <th className="gc">Y</th>
           </tr>
 
-          {/* groups row — merged, colour-grouped labels above the character names */}
+          {/* groups row — merged group bands (A..W) with a bold rule beneath them separating the
+              groups header from the characters header. The X/Y pole titles below are merged up into
+              this row (rowSpan) so each reads as one header cell, tinted like its own column. */}
           <tr>
             <td className="rnum" />
-            <td className="grphead">{t('result.groups')}</td>
+            <td className="grphead b-bottom">{t('result.groups')}</td>
             {groupRuns.map((run, i) => (
-              <td key={i} colSpan={run.span} className="grp" style={{ backgroundColor: run.color }}>
+              <td
+                key={i}
+                colSpan={run.span}
+                className="grp b-bottom"
+                style={{ backgroundColor: run.color }}
+              >
                 {t(`result.${run.key}`)}
               </td>
             ))}
-            <td className="pole" />
-            <td className="pole" />
+            <td rowSpan={2} className="pole em b-bottom b-left rg-title">
+              {t('result.emergentCol')}
+            </td>
+            <td rowSpan={2} className="pole co b-bottom rg-title">
+              {t('result.contrastCol')}
+            </td>
           </tr>
 
-          {/* row 0 — names (vertical, colour-grouped) + pole column titles */}
+          {/* row 0 — names (vertical, colour-grouped). The X/Y pole titles are merged up from here
+              into the groups row above, so this row carries no X/Y cells of its own. */}
           <tr>
             <td className="rnum">0</td>
             <td className="diag">
@@ -159,8 +171,6 @@ export function GridTable({ characters, interactive = true, highlight = null }: 
                 <span className="t">{names[pos] || '—'}</span>
               </td>
             ))}
-            <td className="pole em b-bottom b-left rg-title">{t('result.emergentCol')}</td>
-            <td className="pole co b-bottom rg-title">{t('result.contrastCol')}</td>
           </tr>
         </thead>
 

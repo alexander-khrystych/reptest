@@ -240,7 +240,8 @@
 .rg-grid td.b-right {
   border-right: 2px solid var(--ink-3);
 }
-.rg-grid td.b-left {
+.rg-grid td.b-left,
+.rg-grid th.b-left {
   border-left: 2px solid var(--ink-3);
 }
 
