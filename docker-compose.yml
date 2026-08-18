@@ -1,0 +1,23 @@
+# One-command local run: `docker compose up`, then open http://localhost:8087.
+#
+# No Cloudflare account and no `wrangler login` are needed: the relay runs on wrangler's local
+# mode, which simulates the Durable Object + KV namespace on a bundled workerd runtime, offline.
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: docker/relay.Dockerfile
+    ports:
+      - "1999:1999"
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      args:
+        # Inlined into the SPA at build time; the browser reaches the relay via the host port.
+        VITE_PARTYKIT_HOST: "localhost:1999"
+    ports:
+      - "8087:8087"
+    depends_on:
+      - relay
