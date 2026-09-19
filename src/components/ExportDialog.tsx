@@ -7,7 +7,7 @@ interface ExportTable {
   name: string
   characters: number[]
   pinned?: boolean
-  kind?: 'grid' | 'relationships' | 'diagram' | 'crel' | 'grid10' | 'rho' | 'rho2'
+  kind?: 'grid' | 'relationships' | 'diagram' | 'crel' | 'rho' | 'rho2'
 }
 
 interface Props {

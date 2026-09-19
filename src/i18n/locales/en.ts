@@ -205,7 +205,7 @@ export const en = {
     eleventh: '11th construct',
     step1: 'Step 1 · Characters',
     step2: 'Step 2 · Constructs',
-    step3: 'Step 3 · Elicitation',
+    step3: 'Step 3 · Constructs ranking',
     charsTitle: 'Pick 10 characters',
     charsHint: 'Choose the 10 characters for the concentrated grid. “Me” is always included.',
     groupTitle: 'Reduce to 10 constructs',

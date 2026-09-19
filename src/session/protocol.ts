@@ -18,28 +18,22 @@ export interface WireConstruct {
   contrast: string
   selected: number[]
 }
-/** The finished 10×10 grid (see the store's Grid10*), shared so an observer sees it too. */
+/** The chosen chars + 10 constructs from the ranking flow (see the store's Grid10), shared so an
+ *  observer's matrices can label the constructs. */
 export interface WireG10Group {
   id: string
   sources: number[]
   emergent: string
   contrast: string
 }
-export interface WireG10Iter {
-  triad: number[]
-  construct: number | null
-  oddPos: number | null
-  selected: number[]
-}
 export interface WireGrid10 {
   chars: number[]
   groups: WireG10Group[]
-  elicit: WireG10Iter[]
 }
 export interface BoardSnapshot {
   names: string[]
   constructs: WireConstruct[]
-  /** The finished 10×10 grid, or null when the testee hasn't built it yet. */
+  /** The chosen chars + constructs, or null before the ranking flow finishes. */
   grid10?: WireGrid10 | null
   /** The finished constructs ranking (one character-slot order per construct + the 11th good/bad),
    *  or null when the testee hasn't ranked yet. Drives the observer's Spearman matrices. */

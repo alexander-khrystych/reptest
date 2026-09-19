@@ -10,12 +10,10 @@ export type Phase =
   | 'names'
   | 'elicitation'
   | 'result'
-  // The optional 3rd flow (distill the 22×22 into a focused 10×10), launched from the result screen.
+  // The optional "Constructs ranking" flow (distil the 22×22 into a focused 10 chars × 10 constructs
+  // and rank), launched from the result screen: pick 10 chars → reduce to 10 constructs → rank.
   | 'g10chars'
   | 'g10group'
-  | 'g10elicit'
-  // The 4th flow — rank the 10 characters against the 10×10's constructs (+ a fixed 11th good/bad),
-  // launched separately once the 10×10 grid exists; produces the Spearman matrices.
   | 'g10rank'
 // language + theme moved to the global (non-role-scoped) usePrefsStore.
 
@@ -32,13 +30,17 @@ export interface Construct {
 }
 
 /**
- * 10×10 flow types. A `G10Group` is one kept row (→ one 10×10 construct); `sources` are 0-based
- * indices into the 22 `constructs`. A single-source group mirrors its source's poles; a merged
- * (multi-source) group carries the testee's new `emergent`/`contrast`. A `G10Iter` is one of the
- * 10 elicitation iterations that build the grid — `triad`/`oddPos`/`selected` are indices 0–9 into
- * `chars`, `construct` is an index 0–9 into `groups`. `Grid10` is the finished 10×10 grid shown in
- * Tables; `Grid10Draft` is the in-progress creation flow (kept separate so cancelling a rebuild
- * never drops a finished one).
+ * "Constructs ranking" flow types. A `G10Group` is one kept row (→ one of the 10 constructs);
+ * `sources` are 0-based indices into the 22 `constructs`. A single-source group mirrors its source's
+ * poles; a merged (multi-source) group carries the testee's new `emergent`/`contrast`.
+ *
+ * The flow is one draft, three steps: pick 10 chars → reduce to 10 constructs → rank. Step 3 ranks
+ * the 10 chosen characters against each construct plus a fixed 11th "good/bad", so `orders` holds
+ * `groups.length + 1` rankings — each `orders[k]` a permutation of the character-slot indices 0–9
+ * (indices into `chars`) in ranked order, `orders[k][0]` most like construct k's elicited pole. The
+ * Spearman matrices (see `lib/spearman`) derive entirely from these rankings. On finish the flow
+ * commits `grid10` (the chosen chars + the 10 constructs, for the matrices' labels) and `ranking`.
+ * `Grid10Draft` is the in-progress flow (kept separate so cancelling never drops a finished one).
  */
 export interface G10Group {
   id: string
@@ -46,40 +48,20 @@ export interface G10Group {
   emergent: string
   contrast: string
 }
-export interface G10Iter {
-  triad: number[]
-  construct: number | null
-  oddPos: number | null
-  selected: number[]
-}
 export interface Grid10 {
   chars: number[]
   groups: G10Group[]
-  elicit: G10Iter[]
 }
+export type Ranking = number[][]
 export interface Grid10Draft {
-  step: 'chars' | 'group' | 'elicit'
+  step: 'chars' | 'group' | 'rank'
   chars: number[]
   groups: G10Group[]
   /** The "existing constructs" pool, kept as an explicit ordered list so a construct moved back
    *  lands at the bottom (not re-sorted by index). */
   pool: number[]
   thrown: number[]
-  elicit: G10Iter[]
-  iter: number
-}
-
-/**
- * The separate "constructs ranking" flow (launched once the 10×10 grid exists). It reuses the
- * grid's `chars` + `groups` (no re-pick, no re-filter) and ranks the characters against each of the
- * `groups.length + 1` constructs — the 10 elicited ones plus a fixed 11th "good/bad". Each
- * `orders[k]` is a permutation of the character-slot indices 0–9 (indices into the grid's `chars`)
- * in ranked order — `orders[k][0]` is the character most like construct k's elicited pole. The
- * Spearman matrices (see `lib/spearman`) derive entirely from these rankings. `Ranking` is the
- * finished result; `RankDraft` is the in-progress flow.
- */
-export type Ranking = number[][]
-export interface RankDraft {
+  /** Step 3 — one ranking per construct (`groups.length + 1`), each a permutation of char slots. */
   orders: number[][]
   iter: number
 }
@@ -136,14 +118,13 @@ interface AppState {
   boardRev: number
   /** The result grid was reached via the demo shortcut (Back-to-start instead of Start over). */
   demo: boolean
-  /** The finished 10×10 grid (null until the creation flow completes); its table shows in Tables. */
+  /** The chosen chars + 10 constructs, committed when the ranking flow finishes (null before that);
+   *  supplies the matrices' construct labels. */
   grid10: Grid10 | null
-  /** The in-progress 10×10 creation-flow draft (null when not building one). */
-  g10draft: Grid10Draft | null
-  /** The finished constructs ranking (null until the ranking flow completes); drives the matrices. */
+  /** The finished constructs ranking (null until the flow completes); drives the matrices. */
   ranking: Ranking | null
-  /** The in-progress ranking-flow draft (null when not ranking). */
-  rankDraft: RankDraft | null
+  /** The in-progress "Constructs ranking" flow draft (null when not running it). */
+  g10draft: Grid10Draft | null
 
   setPhase: (phase: Phase) => void
   setName: (index: number, value: string) => void
@@ -159,7 +140,7 @@ interface AppState {
   enterElicitation: () => void
   startTest: () => void
   reset: () => void
-  // 10×10 grid creation flow (chars → group → elicit) — see the Grid10* types above
+  // "Constructs ranking" flow (chars → group → rank) — see the Grid10* types above
   startGrid10: () => void
   cancelGrid10: () => void
   /** Step back one flow step (group → chars). */
@@ -170,23 +151,13 @@ interface AppState {
   moveG10: (constructIdx: number, target: string) => void
   setG10Pole: (groupId: string, field: 'emergent' | 'contrast', value: string) => void
   submitG10Groups: () => void
-  // Step 3 (grid build) — elicitation, one iteration per construct.
-  setG10Iter: (i: number) => void
-  toggleG10Triad: (charIdx: number) => void
-  setG10Construct: (constructIdx: number) => void
-  setG10Odd: (charIdx: number) => void
-  toggleG10Match: (charIdx: number) => void
-  submitG10Iter: () => void
-  // Constructs ranking flow (separate; requires a built grid10) — one ranking per construct.
-  /** Enter/resume the ranking flow. No-op until the 10×10 grid exists. */
-  startRanking: () => void
-  cancelRanking: () => void
+  // Step 3 — rank the characters against each construct (one ranking per iteration).
   /** Replace the current construct's ranking (the character-slot order, top = rank 1). */
-  setRankOrder: (order: number[]) => void
-  /** Advance to the next construct, or (on the last) finalise the ranking and return to result. */
-  rankNext: () => void
-  /** Go back a construct, or (on the first) exit to result, keeping the draft to resume. */
-  rankBack: () => void
+  setG10Order: (order: number[]) => void
+  /** Advance to the next construct, or (on the last) finalise the flow (commit grid10 + ranking). */
+  g10RankNext: () => void
+  /** Go back a construct, or (on the first) return to the grouping step. */
+  g10RankBack: () => void
   // custom comparison tables — the complete default table is synthesised, not stored
   addTable: (name: string, characters: number[]) => string
   renameTable: (id: string, name: string) => void
@@ -211,14 +182,13 @@ const emptyRow = (): string[] => Array.from({ length: GRID_SIZE }, () => '')
 const emptyConstruct = (): Construct => ({ oddPos: null, emergent: '', contrast: '', selected: [] })
 const emptyConstructs = (): Construct[] => Array.from({ length: GRID_SIZE }, emptyConstruct)
 const emptyPair = (): CharPair => ({ id: nanoid(), a: null, b: null })
-const emptyG10Iter = (): G10Iter => ({ triad: [], construct: null, oddPos: null, selected: [] })
 const freshG10Draft = (): Grid10Draft => ({
   step: 'chars',
   chars: [0], // "me" (position 0) starts selected and can't be removed
   groups: [],
   pool: [],
   thrown: [],
-  elicit: [],
+  orders: [],
   iter: 0,
 })
 /** Identity ranking [0,1,…,n-1] — the default order shown before the testee drags anything. */
@@ -236,11 +206,10 @@ const freshTest = () => ({
   savedTables: [] as SavedTable[],
   pairsByTable: {} as Record<string, CharPair[]>,
   activePairByTable: {} as Record<string, string | null>,
-  // The 10×10 grid + the constructs ranking (and any in-progress build of either) are tied to this test.
+  // The constructs ranking (and any in-progress run of the flow) is tied to this test.
   grid10: null as Grid10 | null,
   g10draft: null as Grid10Draft | null,
   ranking: null as Ranking | null,
-  rankDraft: null as RankDraft | null,
 })
 
 export const useAppStore = create<AppState>()(
@@ -328,11 +297,11 @@ export const useAppStore = create<AppState>()(
         startTest: () => set({ phase: 'names', ...freshTest() }),
         reset: () => set({ phase: 'start', ...freshTest() }),
 
-        // ---- 10×10 grid creation flow ------------------------------------------------------
+        // ---- "Constructs ranking" flow (chars → group → rank) ------------------------------
         startGrid10: () =>
           set((s) => {
             const d = s.g10draft ?? freshG10Draft()
-            const phase = d.step === 'group' ? 'g10group' : d.step === 'elicit' ? 'g10elicit' : 'g10chars'
+            const phase = d.step === 'group' ? 'g10group' : d.step === 'rank' ? 'g10rank' : 'g10chars'
             return { g10draft: d, phase }
           }),
         cancelGrid10: () => set({ g10draft: null, phase: 'result' }),
@@ -341,7 +310,6 @@ export const useAppStore = create<AppState>()(
             const d = s.g10draft
             if (!d) return s
             if (d.step === 'group') return { g10draft: { ...d, step: 'chars' }, phase: 'g10chars' }
-            if (d.step === 'elicit') return { g10draft: { ...d, step: 'group' }, phase: 'g10group' }
             return s
           }),
         toggleG10Char: (pos) =>
@@ -415,113 +383,45 @@ export const useAppStore = create<AppState>()(
               (g) => g.sources.length === 1 || (g.emergent.trim() !== '' && g.contrast.trim() !== ''),
             )
             if (!ready) return s
-            // Keep any elicitation already done (group → elicit → group → elicit shouldn't wipe it);
-            // else start with one blank iteration per kept construct.
-            const elicit = d.elicit.length === 10 ? d.elicit : Array.from({ length: 10 }, emptyG10Iter)
-            return { g10draft: { ...d, step: 'elicit', elicit, iter: 0 }, phase: 'g10elicit' }
+            // Step 3 ranks against the 10 constructs + the fixed 11th (good/bad). Keep any rankings
+            // already done (group → rank → group → rank shouldn't wipe them); else start at identity.
+            const numC = d.groups.length + 1
+            const orders =
+              d.orders.length === numC
+                ? d.orders
+                : Array.from({ length: numC }, () => identityOrder(d.chars.length))
+            return { g10draft: { ...d, step: 'rank', orders, iter: 0 }, phase: 'g10rank' }
           }),
-        setG10Iter: (i) =>
-          set((s) =>
-            s.g10draft ? { g10draft: { ...s.g10draft, iter: Math.max(0, Math.min(9, i)) } } : s,
-          ),
-        toggleG10Triad: (ci) =>
+        setG10Order: (order) =>
           set((s) => {
             const d = s.g10draft
             if (!d) return s
-            const it = d.elicit[d.iter]
-            let triad: number[]
-            if (it.triad.includes(ci)) triad = it.triad.filter((x) => x !== ci)
-            else if (it.triad.length < 3) triad = [...it.triad, ci]
-            else return s // a triad holds exactly 3
-            const oddPos = it.oddPos !== null && triad.includes(it.oddPos) ? it.oddPos : null
-            const selected = it.selected.filter((x) => !triad.includes(x))
-            const elicit = d.elicit.slice()
-            elicit[d.iter] = { ...it, triad, oddPos, selected }
-            return { g10draft: { ...d, elicit } }
+            const orders = d.orders.slice()
+            orders[d.iter] = order
+            return { g10draft: { ...d, orders } }
           }),
-        setG10Construct: (ci) =>
+        g10RankNext: () =>
           set((s) => {
             const d = s.g10draft
             if (!d) return s
-            if (d.elicit.some((it, i) => i !== d.iter && it.construct === ci)) return s // used once
-            const elicit = d.elicit.slice()
-            const cur = d.elicit[d.iter].construct
-            elicit[d.iter] = { ...d.elicit[d.iter], construct: cur === ci ? null : ci }
-            return { g10draft: { ...d, elicit } }
-          }),
-        setG10Odd: (ci) =>
-          set((s) => {
-            const d = s.g10draft
-            if (!d || !d.elicit[d.iter].triad.includes(ci)) return s
-            const elicit = d.elicit.slice()
-            const cur = d.elicit[d.iter].oddPos
-            elicit[d.iter] = { ...d.elicit[d.iter], oddPos: cur === ci ? null : ci }
-            return { g10draft: { ...d, elicit } }
-          }),
-        toggleG10Match: (ci) =>
-          set((s) => {
-            const d = s.g10draft
-            if (!d || d.elicit[d.iter].triad.includes(ci)) return s // matches come from the other 7
-            const it = d.elicit[d.iter]
-            const selected = it.selected.includes(ci)
-              ? it.selected.filter((x) => x !== ci)
-              : [...it.selected, ci]
-            const elicit = d.elicit.slice()
-            elicit[d.iter] = { ...it, selected }
-            return { g10draft: { ...d, elicit } }
-          }),
-        submitG10Iter: () =>
-          set((s) => {
-            const d = s.g10draft
-            if (!d) return s
-            if (d.iter < 9) return { g10draft: { ...d, iter: d.iter + 1 } }
-            // last iteration → finalise the 10×10 grid, return to result, and broadcast (boardRev++).
-            // A rebuilt grid invalidates any prior ranking (its constructs may have changed), so drop it.
-            const grid10: Grid10 = { chars: d.chars, groups: d.groups, elicit: d.elicit }
+            if (d.iter < d.orders.length - 1) return { g10draft: { ...d, iter: d.iter + 1 } }
+            // last construct → commit the chosen chars + constructs (for the matrices' labels) and
+            // the rankings, return to result, and broadcast (boardRev++).
+            const grid10: Grid10 = { chars: d.chars, groups: d.groups }
             return {
               grid10,
+              ranking: d.orders,
               g10draft: null,
-              ranking: null,
-              rankDraft: null,
               phase: 'result',
               boardRev: s.boardRev + 1,
             }
           }),
-
-        // ---- constructs ranking flow (separate; needs a built grid10) ----------------------
-        startRanking: () =>
+        g10RankBack: () =>
           set((s) => {
-            if (!s.grid10) return s // locked until the 10×10 grid exists
-            const numC = s.grid10.groups.length + 1 // the 10 constructs + the fixed 11th (good/bad)
-            const d = s.rankDraft ?? {
-              orders: Array.from({ length: numC }, () => identityOrder(s.grid10!.chars.length)),
-              iter: 0,
-            }
-            return { rankDraft: d, phase: 'g10rank' }
-          }),
-        cancelRanking: () => set({ rankDraft: null, phase: 'result' }),
-        setRankOrder: (order) =>
-          set((s) => {
-            const d = s.rankDraft
+            const d = s.g10draft
             if (!d) return s
-            const orders = d.orders.slice()
-            orders[d.iter] = order
-            return { rankDraft: { ...d, orders } }
-          }),
-        rankNext: () =>
-          set((s) => {
-            const d = s.rankDraft
-            if (!d) return s
-            if (d.iter < d.orders.length - 1) return { rankDraft: { ...d, iter: d.iter + 1 } }
-            // last construct → finalise the ranking, return to result, and broadcast it (boardRev++).
-            return { ranking: d.orders, rankDraft: null, phase: 'result', boardRev: s.boardRev + 1 }
-          }),
-        rankBack: () =>
-          set((s) => {
-            const d = s.rankDraft
-            if (!d) return s
-            if (d.iter > 0) return { rankDraft: { ...d, iter: d.iter - 1 } }
-            return { phase: 'result' } // exit to result but keep the draft, so it resumes here
+            if (d.iter > 0) return { g10draft: { ...d, iter: d.iter - 1 } }
+            return { g10draft: { ...d, step: 'group' }, phase: 'g10group' }
           }),
 
         addTable: (name, characters) => {
@@ -602,7 +502,7 @@ export const useAppStore = create<AppState>()(
       // Observer tabs use a separate key so a live view can never overwrite a real test in the
       // same browser; their board comes live from the room, so only prefs are persisted.
       name: IS_OBSERVER ? 'repgrid:observer' : 'repgrid',
-      version: 9,
+      version: 10,
       // Persist the whole session so a refresh never loses progress (localStorage autosave).
       partialize: (s) =>
         IS_OBSERVER
@@ -628,7 +528,6 @@ export const useAppStore = create<AppState>()(
               grid10: s.grid10,
               g10draft: s.g10draft,
               ranking: s.ranking,
-              rankDraft: s.rankDraft,
             },
       migrate: (persisted, version) => {
         const p = (persisted ?? {}) as Partial<AppState>
@@ -639,12 +538,12 @@ export const useAppStore = create<AppState>()(
         }
         // v2 → v3 added custom tables; v3 → v4 a global pairs list; v4 → v5 made pairs per-table;
         // v5 → v6 added the 10×10 flow; v6 → v7 reworked step 3 (elicitation → ranking); v7 → v8
-        // split them back apart (grid build vs. a separate ranking flow); v8 → v9 gave the grouping
-        // draft an explicit `pool`. Any pre-v9 10×10 / ranking state is dropped. Older sessions get
-        // sensible defaults.
-        const staleG10 = version < 9
-        // Dropping the in-progress drafts also means we can't sit on a 10×10 flow phase — and a
-        // renamed phase may no longer map to a screen. Bounce any flow phase back to result.
+        // split them apart (grid build vs. a separate ranking flow); v8 → v9 gave the grouping draft
+        // a `pool`; v9 → v10 merged them back into one flow (chars → group → rank), dropping the grid
+        // build + table. Any pre-v10 10×10 / ranking state is dropped. Older sessions get defaults.
+        const staleG10 = version < 10
+        // Dropping the in-progress draft also means we can't sit on a flow phase — and a removed
+        // phase (e.g. the old 'g10elicit') may no longer map to a screen. Bounce it back to result.
         const phase =
           staleG10 && typeof p.phase === 'string' && p.phase.startsWith('g10') ? 'result' : p.phase
         return {
@@ -656,7 +555,6 @@ export const useAppStore = create<AppState>()(
           grid10: staleG10 ? null : (p.grid10 ?? null),
           g10draft: staleG10 ? null : (p.g10draft ?? null),
           ranking: staleG10 ? null : (p.ranking ?? null),
-          rankDraft: staleG10 ? null : (p.rankDraft ?? null),
         } as unknown as AppState
       },
     },

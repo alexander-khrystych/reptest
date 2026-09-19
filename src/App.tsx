@@ -10,7 +10,6 @@ import { ElicitationScreen } from '@/screens/ElicitationScreen'
 import { ResultScreen } from '@/screens/ResultScreen'
 import { Grid10CharsScreen } from '@/screens/Grid10CharsScreen'
 import { Grid10GroupScreen } from '@/screens/Grid10GroupScreen'
-import { Grid10ElicitScreen } from '@/screens/Grid10ElicitScreen'
 import { Grid10RankScreen } from '@/screens/Grid10RankScreen'
 import { ObserverScreen } from '@/screens/ObserverScreen'
 import type { Phase } from '@/store/useAppStore'
@@ -22,7 +21,6 @@ const SCREENS: Record<Phase, ComponentType> = {
   result: ResultScreen,
   g10chars: Grid10CharsScreen,
   g10group: Grid10GroupScreen,
-  g10elicit: Grid10ElicitScreen,
   g10rank: Grid10RankScreen,
 }
 
@@ -40,8 +38,7 @@ function TesteeApp() {
   const Screen = SCREENS[safePhase]
   // The result grid wants the full screen width; the other screens stay narrow.
   const wide = phase === 'result'
-  const inFlow =
-    phase === 'g10chars' || phase === 'g10group' || phase === 'g10elicit' || phase === 'g10rank'
+  const inFlow = phase === 'g10chars' || phase === 'g10group' || phase === 'g10rank'
 
   return (
     <div className="min-h-full">

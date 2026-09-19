@@ -15,7 +15,6 @@ import { GridTable } from './GridTable'
 import { RelationshipsTable } from './RelationshipsTable'
 import { ConstructsDiagram } from './ConstructsDiagram'
 import { ConstructsRelTable } from './ConstructsRelTable'
-import { Grid10Table } from './Grid10Table'
 import { Grid10MatrixTable } from './Grid10MatrixTable'
 import './resultGrid.css'
 
@@ -25,7 +24,6 @@ const neutralBtn = 'rounded-[9px] border border-line px-4 py-2 text-sm text-ink 
 const RELATIONSHIPS_TABLE_ID = '__relationships__'
 const DIAGRAM_TABLE_ID = '__diagram__'
 const CREL_TABLE_ID = '__crel__'
-const GRID10_TABLE_ID = '__grid10__'
 const RHO_TABLE_ID = '__rho__'
 const RHO2_TABLE_ID = '__rho2__'
 
@@ -34,9 +32,9 @@ interface ViewTable {
   name: string
   characters: number[]
   pinned?: boolean
-  /** 'grid' (main + custom), 'relationships', 'diagram', 'crel' (constructs relations table), the
-   *  concentrated 10×10 grid ('grid10'), or the Spearman matrices 'rho' (ρ) / 'rho2' (ρ² × 100). */
-  kind?: 'grid' | 'relationships' | 'diagram' | 'crel' | 'grid10' | 'rho' | 'rho2'
+  /** 'grid' (main + custom), 'relationships', 'diagram', 'crel' (constructs relations table), or the
+   *  Spearman matrices 'rho' (ρ) / 'rho2' (ρ² × 100). */
+  kind?: 'grid' | 'relationships' | 'diagram' | 'crel' | 'rho' | 'rho2'
 }
 
 type Builder = { mode: 'new' } | { mode: 'rename'; id: string; name: string }
@@ -66,7 +64,6 @@ export function ResultScreen() {
   const grid10 = useAppStore((s) => s.grid10)
   const ranking = useAppStore((s) => s.ranking)
   const startGrid10 = useAppStore((s) => s.startGrid10)
-  const startRanking = useAppStore((s) => s.startRanking)
 
   // The complete table is synthesised (all characters) and always pinned first.
   const allChars = useMemo(() => names.map((_, i) => i), [names])
@@ -93,19 +90,7 @@ export function ResultScreen() {
       pinned: true,
       kind: 'crel',
     },
-    // The concentrated 10×10 grid appears once its creation flow is done.
-    ...(grid10
-      ? [
-          {
-            id: GRID10_TABLE_ID,
-            name: t('tables.grid10Name'),
-            characters: grid10.chars,
-            pinned: true,
-            kind: 'grid10' as const,
-          },
-        ]
-      : []),
-    // The Spearman matrices appear once the separate ranking flow is done.
+    // The Spearman matrices appear once the ranking flow is done.
     ...(ranking
       ? [
           {
@@ -127,11 +112,8 @@ export function ResultScreen() {
     ...savedTables,
   ]
 
-  // After the ranking flow the first matrix is the default view; after building the grid, the grid
-  // itself; otherwise the main table.
-  const [currentId, setCurrentId] = useState(
-    ranking ? RHO_TABLE_ID : grid10 ? GRID10_TABLE_ID : DEFAULT_TABLE_ID,
-  )
+  // After the ranking flow the first matrix (ρ) is the default view; otherwise the main table.
+  const [currentId, setCurrentId] = useState(ranking ? RHO_TABLE_ID : DEFAULT_TABLE_ID)
   const current = tables.find((tb) => tb.id === currentId) ?? tables[0]
 
   // The Tables button + current table name live in the pinned header now (NavBar); publish the
@@ -397,23 +379,11 @@ export function ResultScreen() {
           </button>
         )}
         <span className="flex-1" />
-        {/* Constructs ranking — a separate flow, greyed and locked until the 10×10 grid exists,
-            sitting just left of Create. Testee-only (edits test data). */}
-        {!IS_OBSERVER && (
-          <button
-            type="button"
-            onClick={startRanking}
-            disabled={!grid10}
-            title={!grid10 ? t('g10.rankingLocked') : undefined}
-            className={`${neutralBtn} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line`}
-          >
-            {t('g10.ranking')}
-          </button>
-        )}
-        {/* the 10×10 creation flow edits test data → testee-only (hidden on the read-only screen) */}
+        {/* Launches the Constructs ranking flow (pick chars → reduce constructs → rank). Testee-only
+            (edits test data → hidden on the observer's read-only screen). */}
         {!IS_OBSERVER && (
           <button type="button" onClick={startGrid10} className={neutralBtn}>
-            {t('g10.create')}
+            {t('g10.ranking')}
           </button>
         )}
         <button
@@ -439,8 +409,6 @@ export function ResultScreen() {
           <ConstructsDiagram selected={diagramK} onSelect={setDiagramK} />
         ) : current.kind === 'crel' ? (
           <ConstructsRelTable />
-        ) : current.kind === 'grid10' ? (
-          <Grid10Table grid10={grid10} />
         ) : current.kind === 'rho' || current.kind === 'rho2' ? (
           // Key by variant so switching ρ ↔ ρ²×100 remounts (drops the previous table's crosshair).
           <Grid10MatrixTable
@@ -486,14 +454,6 @@ export function ResultScreen() {
                   <section key={tb.id} className="rg-print-page">
                     <h2 className="rg-print-name">{tb.name}</h2>
                     <ConstructsRelTable interactive={false} />
-                  </section>
-                )
-              }
-              if (tb.kind === 'grid10') {
-                return (
-                  <section key={tb.id} className="rg-print-page">
-                    <h2 className="rg-print-name">{tb.name}</h2>
-                    <Grid10Table grid10={grid10} interactive={false} />
                   </section>
                 )
               }

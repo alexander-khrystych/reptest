@@ -33,11 +33,9 @@ export function NavBar() {
       ? t('flow.characters')
       : phase === 'elicitation'
         ? t('flow.constructs')
-        : phase === 'g10chars' || phase === 'g10group' || phase === 'g10elicit'
-          ? t('flow.grid10')
-          : phase === 'g10rank'
-            ? t('flow.ranking')
-            : t('appName')
+        : phase === 'g10chars' || phase === 'g10group' || phase === 'g10rank'
+          ? t('flow.ranking')
+          : t('appName')
 
   // Progress count: committed names, or the current construct number. None on start/result.
   const progress =

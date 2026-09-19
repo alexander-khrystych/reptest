@@ -82,21 +82,20 @@ function SortableChar({
 }
 
 /**
- * The separate constructs-ranking flow (launched once the 10×10 grid exists). Reusing the grid's
- * chosen characters + constructs, the testee ranks the characters against each construct, one per
- * iteration (the 10 elicited constructs, then a fixed 11th "good / bad"). The construct pair is
- * shown but not editable; order the characters by drag, or by clicking a card to select it and then
- * nudging it with the up/down arrow keys. The rankings feed the Spearman matrices.
+ * Step 3 of the "Constructs ranking" flow — rank the 10 chosen characters against each construct,
+ * one per iteration (the 10 constructs, then a fixed 11th "good / bad"). The construct pair is shown
+ * but not editable; order the characters by drag, or by clicking a card to select it and then nudging
+ * it with the up/down arrow keys. On finishing the last construct the flow commits the rankings,
+ * which feed the Spearman matrices.
  */
 export function Grid10RankScreen() {
   const { t } = useTranslation()
   const language = usePrefsStore((s) => s.language)
   const names = useAppStore((s) => s.names)
-  const grid10 = useAppStore((s) => s.grid10)
-  const draft = useAppStore((s) => s.rankDraft)
-  const setOrder = useAppStore((s) => s.setRankOrder)
-  const next = useAppStore((s) => s.rankNext)
-  const back = useAppStore((s) => s.rankBack)
+  const draft = useAppStore((s) => s.g10draft)
+  const setOrder = useAppStore((s) => s.setG10Order)
+  const next = useAppStore((s) => s.g10RankNext)
+  const back = useAppStore((s) => s.g10RankBack)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   // The currently selected character slot (keyboard-movable). Cleared when the construct changes.
@@ -105,7 +104,7 @@ export function Grid10RankScreen() {
   useEffect(() => setSelected(null), [iter])
 
   // Keep the arrow-key + click-outside handlers stable while reading the latest order/selection.
-  const order = draft && grid10 ? (draft.orders[iter] ?? grid10.chars.map((_, i) => i)) : []
+  const order = draft ? (draft.orders[iter] ?? draft.chars.map((_, i) => i)) : []
   const orderRef = useRef(order)
   orderRef.current = order
   const selRef = useRef(selected)
@@ -137,8 +136,8 @@ export function Grid10RankScreen() {
     }
   }, [])
 
-  if (!draft || !grid10) return null
-  const { chars, groups } = grid10
+  if (!draft) return null
+  const { chars, groups } = draft
   const roles = ROLES[language]
   const total = draft.orders.length
   const isLast = iter === total - 1
@@ -162,7 +161,7 @@ export function Grid10RankScreen() {
   return (
     <div className="mx-auto max-w-[560px]">
       <p className="mb-1 font-mono text-xs uppercase tracking-wide text-ink-3">
-        {t('flow.ranking')} · {iter + 1} / {total}
+        {t('g10.step3')} · {iter + 1} / {total}
       </p>
       <p className="mb-1.5 text-[22px] font-semibold leading-tight">{t('g10.rankTitle')}</p>
       <p className="mb-4 text-sm text-ink-2">{t('g10.rankHint')}</p>
