@@ -4,7 +4,9 @@ import { constructScore } from '@/lib/pairScore'
 import './resultGrid.css'
 
 const HEAD_W = 160 // left construct-header column
-const COL_W = 54 // each score column — fits "+22 / -6"
+// Each score column. The widest cell text is the worst-case score "+22 / -6" (≈38px at 11px/600);
+// with the cell's 2px padding, 46px leaves a comfortable margin with no clipping and no font change.
+const COL_W = 46
 
 // +P heat-map level (1–4) → a CSS class (shared with the character-relationships table), so the
 // fill follows the theme. pos ∈ [0, 22] here, same range as the character pair score.
