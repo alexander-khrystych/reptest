@@ -255,6 +255,329 @@
   pointer-events: none;
 }
 
+/* ---- character-relationships matrix ---------------------------------------------------------
+   A character × character grid. Reuses the grid frame + group-header styles (.grp, .lab.namerow),
+   and adds the left header columns (vertical group bands + horizontal name labels), the score
+   cells and the greyed self-diagonal. Score fills + text colours are fixed hex, per spec (they
+   are not theme tokens, so this table reads the same in light and dark). */
+.rg-grid.rg-rel td {
+  height: 24px;
+}
+/* the empty top-left-most corner cell — stays grey */
+.rg-grid td.rel-corner {
+  background-color: var(--line-2);
+}
+/* the two left column headers ("groups", "characters") — white, like the main grid's group
+   label; "groups" is rotated to read up the narrow group column */
+.rg-grid td.rel-chead {
+  background-color: var(--card);
+  text-align: center;
+  vertical-align: middle;
+  font-size: 11px;
+  color: var(--ink-2);
+  padding: 2px 4px;
+  overflow: hidden;
+}
+.rg-grid td.rel-chead .rel-cvtext {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: inline-block;
+  white-space: nowrap;
+}
+/* left group column — merged vertical bands, mirroring the top "groups" row */
+.rg-grid td.rel-vgroup {
+  text-align: center;
+  vertical-align: middle;
+  overflow: hidden;
+  padding: 1px;
+}
+.rg-grid td.rel-vgroup .rel-vtext {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: inline-block;
+  white-space: normal;
+  overflow: hidden;
+  font-size: 9.5px;
+  line-height: 1.05;
+  color: var(--ink);
+}
+/* left character column — horizontal row labels */
+.rg-grid td.rel-rowname {
+  text-align: left;
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 1.15;
+  white-space: normal; /* names longer than the column (≈13 chars) wrap to a 2nd line */
+  color: var(--ink);
+}
+/* score cells: "+P / -N" over the +P heat-map fill */
+.rg-grid td.rel-cell {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px;
+  white-space: nowrap;
+}
+/* +P heat fills — light yellows in light mode, dark ambers in dark mode (the grid follows theme) */
+.rg-grid td.rel-h1 {
+  background-color: #fff8e5;
+}
+.rg-grid td.rel-h2 {
+  background-color: #fff2cc;
+}
+.rg-grid td.rel-h3 {
+  background-color: #ffe599;
+}
+.rg-grid td.rel-h4 {
+  background-color: #ffd966;
+}
+[data-theme='dark'] .rg-grid td.rel-h1 {
+  background-color: #2f2c1c;
+}
+[data-theme='dark'] .rg-grid td.rel-h2 {
+  background-color: #3d3820;
+}
+[data-theme='dark'] .rg-grid td.rel-h3 {
+  background-color: #514723;
+}
+[data-theme='dark'] .rg-grid td.rel-h4 {
+  background-color: #665829;
+}
+/* score text — theme-aware so it stays legible on either the light or dark heat fill */
+.rg-grid td.rel-cell .rel-pos-lo {
+  color: #34a853;
+}
+.rg-grid td.rel-cell .rel-pos-hi {
+  color: #1f9b3f;
+}
+.rg-grid td.rel-cell .rel-neg {
+  color: #ff0000;
+}
+.rg-grid td.rel-cell .rel-sep {
+  color: #000000;
+}
+[data-theme='dark'] .rg-grid td.rel-cell .rel-pos-lo {
+  color: #57cf77;
+}
+[data-theme='dark'] .rg-grid td.rel-cell .rel-pos-hi {
+  color: #43bf5f;
+}
+[data-theme='dark'] .rg-grid td.rel-cell .rel-neg {
+  color: #ff7676;
+}
+[data-theme='dark'] .rg-grid td.rel-cell .rel-sep {
+  color: #ffffff;
+}
+/* a character crossed with itself */
+.rg-grid td.rel-self {
+  background-color: #efefef;
+}
+[data-theme='dark'] .rg-grid td.rel-self {
+  background-color: #26333a;
+}
+
+/* ---- Spearman 11×11 matrices (ρ and ρ² × 100) ----------------------------------------------
+   A construct × construct grid. Top + right headers are the 11 construct pairs (elicited pole in
+   the emergent colour, contrast pole in the contrast colour). The top header reads bottom-to-top;
+   the right header wraps horizontally. The self-diagonal is greyed. Reuses the grid frame + the
+   shared click-crosshair (.rg-hl). */
+.rg-grid.rg-mtx td {
+  height: 24px;
+}
+/* top header — one construct pair per data column, vertical, reading bottom-to-top */
+.rg-grid td.mtx-top {
+  background-color: var(--card);
+  vertical-align: bottom;
+  padding: 6px 1px;
+  overflow: hidden;
+}
+.rg-grid td.mtx-top .mtx-vlabel {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: inline-block;
+  white-space: nowrap;
+  line-height: 1.2;
+  font-size: 11px;
+  text-align: left;
+}
+.mtx-sep {
+  color: var(--ink-3);
+}
+/* the empty top-right corner (above the right header column) — stays grey */
+.rg-grid td.mtx-corner {
+  background-color: var(--line-2);
+}
+/* coefficient cells */
+.rg-grid td.mtx-cell {
+  background-color: var(--card);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+/* a construct crossed with itself — greyed, inert */
+.rg-grid td.mtx-cell.mtx-diag {
+  background-color: #efefef;
+  cursor: default;
+}
+[data-theme='dark'] .rg-grid td.mtx-cell.mtx-diag {
+  background-color: #26333a;
+}
+/* right header — the construct pair for each row, horizontal (wraps when long) */
+.rg-grid td.mtx-rhead {
+  background-color: var(--card);
+  text-align: left;
+  padding: 3px 9px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: normal;
+}
+
+/* ---- constructs-relations matrix (22×22) ----------------------------------------------------
+   Matrix-style headers (like ρ) but each construct is two lines — elicited pole over contrast pole —
+   while the grid cells reuse the character-relations heat classes (.rel-cell / .rel-h* / .rel-self). */
+.rg-grid.rg-crel td.rel-cell,
+.rg-grid.rg-crel td.rel-self {
+  height: 24px;
+}
+/* top header — two short vertical lines (elicited + contrast), reading bottom-to-top */
+.rg-grid td.crel-top {
+  background-color: var(--card);
+  vertical-align: bottom;
+  padding: 6px 1px;
+  overflow: hidden;
+}
+.rg-grid td.crel-top .crel-vwrap {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 3px;
+}
+.rg-grid td.crel-top .crel-vline {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.1;
+}
+/* left header — the construct, elicited pole over contrast pole (wraps when long) */
+.rg-grid td.crel-left {
+  background-color: var(--card);
+  text-align: left;
+  vertical-align: middle;
+  padding: 3px 8px;
+  font-size: 11px;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+/* ---- constructs diagram --------------------------------------------------------------------- */
+.cd-wrap {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+/* left — the construct selector (both poles per row, click either to pick that construct) */
+.cd-selector {
+  flex: none;
+  width: 260px;
+  max-height: 72vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+.cd-srow {
+  display: flex;
+  gap: 3px;
+  padding: 1px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  text-align: left;
+}
+.cd-srow:hover {
+  border-color: var(--line);
+}
+.cd-srow-on {
+  border-color: var(--primary);
+  background: var(--primary-tint);
+}
+.cd-spole {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  line-height: 1.25;
+  color: var(--ink);
+  white-space: normal; /* long pole names wrap to the next line rather than truncating */
+  overflow-wrap: anywhere;
+}
+.cd-chart {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.cd-caption {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.cd-caption .cd-spole {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+.cd-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+/* pole tints, shared by the selector spans (background) and the SVG label rects (fill) */
+.cd-pole-e {
+  background: var(--emergent-tint);
+  fill: var(--emergent-tint);
+}
+.cd-pole-c {
+  background: rgba(56, 152, 219, 0.14);
+  fill: rgba(56, 152, 219, 0.14);
+}
+.cd-lblbg {
+  stroke: var(--line);
+  stroke-width: 0.75;
+}
+.cd-axis {
+  stroke: var(--ink-2);
+  stroke-width: 1.2;
+  fill: none;
+}
+.cd-grid {
+  stroke: var(--ink-3);
+  stroke-opacity: 0.35;
+  stroke-width: 1;
+}
+.cd-tick {
+  stroke: var(--ink-2);
+  stroke-width: 1;
+}
+.cd-num {
+  fill: var(--ink-2);
+  font: 12px Arial, sans-serif;
+}
+.cd-lbl {
+  fill: var(--ink);
+  font: 14px Arial, sans-serif;
+}
+/* +P / −N value numbers above / below each column — black in light, white in dark */
+.cd-score {
+  fill: #000000;
+  font: 700 13px Arial, sans-serif;
+}
+[data-theme='dark'] .cd-score {
+  fill: #ffffff;
+}
+
 /* legend swatches */
 .rg-sw {
   width: 17px;
@@ -373,5 +696,10 @@
   /* export the grid in its default state — drop the on-screen click highlight */
   .rg-grid td.rg-hl::before {
     display: none;
+  }
+  /* the constructs diagram fills the page width but never overflows its height */
+  .cd-svg {
+    max-height: 180mm;
+    margin: 0 auto;
   }
 }

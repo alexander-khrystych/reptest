@@ -21,9 +21,14 @@
   --contrast: #4e6379;
   --contrast-tint: #e4e9ee;
   --triad: #c0392b;
+  /* pale-red tint (the red counterpart of --primary-tint) — used for the "keep column full"
+     drop-area / button highlight in the 10×10 grouping step */
+  --triad-tint: #f7dcd8;
   /* pale-blue frame for the triad ("one of the three compared") cells — distinct from the
      green/red pair-comparison lines below */
   --frame: #5b93c9;
+  /* fixed height of the pinned page header (NavBar); the table drawer starts below it */
+  --header-h: 53px;
   /* git-diff-style pair-comparison colours (score text + diagonal cell hatching) */
   --pos: #2f9e44;
   --neg: #e03131;
@@ -46,6 +51,7 @@
   --contrast: #8ca2be;
   --contrast-tint: #1d2938;
   --triad: #e1594b;
+  --triad-tint: #3a1f1c;
   --frame: #6ba3d6;
   --pos: #4cc26a;
   --neg: #ff6b6b;
@@ -70,6 +76,7 @@
   --color-contrast: var(--contrast);
   --color-contrast-tint: var(--contrast-tint);
   --color-triad: var(--triad);
+  --color-triad-tint: var(--triad-tint);
   --color-frame: var(--frame);
   --color-pos: var(--pos);
   --color-neg: var(--neg);

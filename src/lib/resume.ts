@@ -29,10 +29,50 @@ const charPair = z.object({
   a: z.number().int().nullable(),
   b: z.number().int().nullable(),
 })
+const g10Group = z.object({
+  id: z.string(),
+  sources: z.array(z.number().int()),
+  emergent: z.string(),
+  contrast: z.string(),
+})
+const g10Iter = z.object({
+  triad: z.array(z.number().int()),
+  construct: z.number().int().nullable(),
+  oddPos: z.number().int().nullable(),
+  selected: z.array(z.number().int()),
+})
+const grid10 = z.object({
+  chars: z.array(z.number().int()),
+  groups: z.array(g10Group),
+  elicit: z.array(g10Iter),
+})
+const g10draft = z.object({
+  step: z.enum(['chars', 'group', 'elicit']),
+  chars: z.array(z.number().int()),
+  groups: z.array(g10Group),
+  pool: z.array(z.number().int()),
+  thrown: z.array(z.number().int()),
+  elicit: z.array(g10Iter),
+  iter: z.number().int(),
+})
+const g10Orders = z.array(z.array(z.number().int()))
+const rankDraft = z.object({
+  orders: g10Orders,
+  iter: z.number().int(),
+})
 
 /** The test-data subset of the store (matches the testee's persisted shape, minus prefs). */
 const resumeSchema = z.object({
-  phase: z.enum(['start', 'names', 'elicitation', 'result']),
+  phase: z.enum([
+    'start',
+    'names',
+    'elicitation',
+    'result',
+    'g10chars',
+    'g10group',
+    'g10elicit',
+    'g10rank',
+  ]),
   names: z.array(z.string()),
   drafts: z.array(z.string()),
   nameIndex: z.number().int(),
@@ -41,6 +81,11 @@ const resumeSchema = z.object({
   savedTables: z.array(savedTable),
   pairsByTable: z.record(z.string(), z.array(charPair)),
   activePairByTable: z.record(z.string(), z.string().nullable()),
+  // The 10×10 grid + the separate constructs ranking; older save files/links omit them → null.
+  grid10: grid10.nullable().default(null),
+  g10draft: g10draft.nullable().default(null),
+  ranking: g10Orders.nullable().default(null),
+  rankDraft: rankDraft.nullable().default(null),
 })
 export type ResumeState = z.infer<typeof resumeSchema>
 
@@ -56,6 +101,10 @@ function snapshot(): ResumeState {
     savedTables: s.savedTables,
     pairsByTable: s.pairsByTable,
     activePairByTable: s.activePairByTable,
+    grid10: s.grid10,
+    g10draft: s.g10draft,
+    ranking: s.ranking,
+    rankDraft: s.rankDraft,
   }
 }
 

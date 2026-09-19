@@ -1,4 +1,4 @@
-import { TRIADS } from '@/data'
+import { TRIADS, GRID_SIZE } from '@/data'
 import type { Construct } from '@/store/useAppStore'
 
 /** Per-construct verdict for a pair: 'pos' (+1) or 'neg' (-1); rows scoring 0 are absent. */
@@ -45,4 +45,27 @@ export function pairScore(constructs: Construct[], a: number, b: number): PairSc
     }
   })
   return { pos, neg, rows }
+}
+
+/**
+ * Relation score between two constructs (rows) — the transpose of `pairScore`: rather than
+ * comparing two characters across all constructs, compare two constructs across all characters.
+ * - +1 when a character sits on the elicited pole of BOTH constructs.
+ * - -1 when a character is on opposite poles of the two AND anchored either construct's triad.
+ * So `pos ∈ [0, 22]` (every character) and `neg ∈ [0, 6]` (the union of the two triads). Symmetric.
+ */
+export function constructScore(constructs: Construct[], k1: number, k2: number): { pos: number; neg: number } {
+  const t1 = TRIADS[k1].map((p) => p - 1)
+  const t2 = TRIADS[k2].map((p) => p - 1)
+  const c1 = constructs[k1]
+  const c2 = constructs[k2]
+  let pos = 0
+  let neg = 0
+  for (let ch = 0; ch < GRID_SIZE; ch++) {
+    const on1 = onEmergentPole(c1, t1, ch)
+    const on2 = onEmergentPole(c2, t2, ch)
+    if (on1 && on2) pos += 1
+    else if (on1 !== on2 && (t1.includes(ch) || t2.includes(ch))) neg += 1
+  }
+  return { pos, neg }
 }

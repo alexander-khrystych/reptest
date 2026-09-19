@@ -28,7 +28,12 @@ let boardSubscribed = false
 
 const sess = () => useSessionStore.getState()
 const app = () => useAppStore.getState()
-const currentBoard = (): BoardSnapshot => ({ names: app().names, constructs: app().constructs })
+const currentBoard = (): BoardSnapshot => ({
+  names: app().names,
+  constructs: app().constructs,
+  grid10: app().grid10,
+  ranking: app().ranking,
+})
 const sendToRoom = (msg: ClientMsg) => socket?.send(JSON.stringify(msg))
 
 // ---- timers -----------------------------------------------------------------------------
@@ -112,7 +117,10 @@ function subscribeBoard() {
     if (s.boardRev === lastRev) return
     lastRev = s.boardRev
     if (!sess().shareEnabled) return
-    sendToRoom({ t: 'snapshot', board: { names: s.names, constructs: s.constructs } })
+    sendToRoom({
+      t: 'snapshot',
+      board: { names: s.names, constructs: s.constructs, grid10: s.grid10, ranking: s.ranking },
+    })
     if (shareMode(sess()) === 'broadcasting') resetIdleTimer() // activity defers the idle timeout
   })
 }

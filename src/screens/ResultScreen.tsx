@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { nanoid } from 'nanoid'
 import { useAppStore, DEFAULT_TABLE_ID } from '@/store/useAppStore'
+import { useResultUi } from '@/store/useResultUi'
+import { IS_OBSERVER } from '@/session/config'
 import { TableBuilderDialog } from '@/components/TableBuilderDialog'
 import { ExportDialog } from '@/components/ExportDialog'
 import { PairsPanel } from '@/components/PairsPanel'
@@ -10,15 +12,31 @@ import { GridLegend } from '@/components/GridLegend'
 import { dialogFooter, useDialogKeys } from '@/components/dialogKit'
 import { pairScore } from '@/lib/pairScore'
 import { GridTable } from './GridTable'
+import { RelationshipsTable } from './RelationshipsTable'
+import { ConstructsDiagram } from './ConstructsDiagram'
+import { ConstructsRelTable } from './ConstructsRelTable'
+import { Grid10Table } from './Grid10Table'
+import { Grid10MatrixTable } from './Grid10MatrixTable'
 import './resultGrid.css'
 
 const neutralBtn = 'rounded-[9px] border border-line px-4 py-2 text-sm text-ink hover:border-ink-3'
+
+/** Synthetic ids for the pinned analysis views, beside the DEFAULT_TABLE_ID grid. */
+const RELATIONSHIPS_TABLE_ID = '__relationships__'
+const DIAGRAM_TABLE_ID = '__diagram__'
+const CREL_TABLE_ID = '__crel__'
+const GRID10_TABLE_ID = '__grid10__'
+const RHO_TABLE_ID = '__rho__'
+const RHO2_TABLE_ID = '__rho2__'
 
 interface ViewTable {
   id: string
   name: string
   characters: number[]
   pinned?: boolean
+  /** 'grid' (main + custom), 'relationships', 'diagram', 'crel' (constructs relations table), the
+   *  concentrated 10×10 grid ('grid10'), or the Spearman matrices 'rho' (ρ) / 'rho2' (ρ² × 100). */
+  kind?: 'grid' | 'relationships' | 'diagram' | 'crel' | 'grid10' | 'rho' | 'rho2'
 }
 
 type Builder = { mode: 'new' } | { mode: 'rename'; id: string; name: string }
@@ -45,23 +63,97 @@ export function ResultScreen() {
   const addTable = useAppStore((s) => s.addTable)
   const renameTable = useAppStore((s) => s.renameTable)
   const deleteTable = useAppStore((s) => s.deleteTable)
+  const grid10 = useAppStore((s) => s.grid10)
+  const ranking = useAppStore((s) => s.ranking)
+  const startGrid10 = useAppStore((s) => s.startGrid10)
+  const startRanking = useAppStore((s) => s.startRanking)
 
   // The complete table is synthesised (all characters) and always pinned first.
   const allChars = useMemo(() => names.map((_, i) => i), [names])
   const tables: ViewTable[] = [
     { id: DEFAULT_TABLE_ID, name: t('tables.defaultName'), characters: allChars, pinned: true },
+    {
+      id: RELATIONSHIPS_TABLE_ID,
+      name: t('tables.relationshipsName'),
+      characters: allChars,
+      pinned: true,
+      kind: 'relationships',
+    },
+    {
+      id: DIAGRAM_TABLE_ID,
+      name: t('tables.diagramName'),
+      characters: allChars,
+      pinned: true,
+      kind: 'diagram',
+    },
+    {
+      id: CREL_TABLE_ID,
+      name: t('tables.relconstructsName'),
+      characters: [],
+      pinned: true,
+      kind: 'crel',
+    },
+    // The concentrated 10×10 grid appears once its creation flow is done.
+    ...(grid10
+      ? [
+          {
+            id: GRID10_TABLE_ID,
+            name: t('tables.grid10Name'),
+            characters: grid10.chars,
+            pinned: true,
+            kind: 'grid10' as const,
+          },
+        ]
+      : []),
+    // The Spearman matrices appear once the separate ranking flow is done.
+    ...(ranking
+      ? [
+          {
+            id: RHO_TABLE_ID,
+            name: t('tables.rhoName'),
+            characters: grid10?.chars ?? [],
+            pinned: true,
+            kind: 'rho' as const,
+          },
+          {
+            id: RHO2_TABLE_ID,
+            name: t('tables.rho2Name'),
+            characters: grid10?.chars ?? [],
+            pinned: true,
+            kind: 'rho2' as const,
+          },
+        ]
+      : []),
     ...savedTables,
   ]
 
-  const [currentId, setCurrentId] = useState(DEFAULT_TABLE_ID)
+  // After the ranking flow the first matrix is the default view; after building the grid, the grid
+  // itself; otherwise the main table.
+  const [currentId, setCurrentId] = useState(
+    ranking ? RHO_TABLE_ID : grid10 ? GRID10_TABLE_ID : DEFAULT_TABLE_ID,
+  )
   const current = tables.find((tb) => tb.id === currentId) ?? tables[0]
 
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  // The Tables button + current table name live in the pinned header now (NavBar); publish the
+  // current table there, and drive the drawer through the shared UI store.
+  const drawerOpen = useResultUi((s) => s.drawerOpen)
+  const closeDrawer = useResultUi((s) => s.closeDrawer)
+  const setHeaderCurrent = useResultUi((s) => s.setCurrent)
+  useEffect(() => {
+    setHeaderCurrent(current.name, !!current.pinned)
+  }, [current.name, current.pinned, setHeaderCurrent])
+  useEffect(() => () => closeDrawer(), [closeDrawer]) // close the drawer when leaving the result view
+
+  // Toggle for the matrices' 11th (good/bad) construct — shown by default.
+  const [show11, setShow11] = useState(true)
+
   const [builder, setBuilder] = useState<Builder | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<ViewTable | null>(null)
   // When set, the print-only stack renders these tables and the browser print dialog opens.
   const [exportIds, setExportIds] = useState<string[] | null>(null)
+  // The construct whose relations the diagram shows (shared by the on-screen + printed diagram).
+  const [diagramK, setDiagramK] = useState(0)
 
   // Pairs are per table; each table's single active pair (if complete) is the one hatched onto
   // its grid — the current table on screen, and each exported table in the PDF.
@@ -80,7 +172,7 @@ export function ResultScreen() {
   // ESC closes the top overlay (the drawer and the builder/export/delete dialogs each register
   // themselves, so ESC peels them off one at a time). The builder + export dialogs handle their
   // own keys; here we cover the drawer and the delete-confirm.
-  useDialogKeys(() => setDrawerOpen(false), undefined, drawerOpen)
+  useDialogKeys(() => closeDrawer(), undefined, drawerOpen)
 
   // Print the export stack once it has rendered, then restore. A unique title keeps saved
   // PDFs from silently overwriting each other.
@@ -108,7 +200,7 @@ export function ResultScreen() {
 
   const selectTable = (id: string) => {
     setCurrentId(id)
-    setDrawerOpen(false)
+    closeDrawer()
   }
   const saveBuilder = (name: string, characters: number[]) => {
     if (builder?.mode === 'rename') {
@@ -116,7 +208,7 @@ export function ResultScreen() {
     } else {
       const id = addTable(name || t('tables.untitled', { n: savedTables.length + 1 }), characters)
       setCurrentId(id)
-      setDrawerOpen(false)
+      closeDrawer()
     }
     setBuilder(null)
   }
@@ -135,10 +227,10 @@ export function ResultScreen() {
         className={`rg-noprint fixed inset-0 z-40 bg-black/40 transition-opacity ${
           drawerOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
-        onClick={() => setDrawerOpen(false)}
+        onClick={() => closeDrawer()}
       />
       <aside
-        className={`rg-noprint fixed inset-y-0 left-0 z-40 flex w-[300px] max-w-[85vw] flex-col border-r border-line bg-card shadow-xl transition-transform ${
+        className={`rg-noprint fixed bottom-0 left-0 top-[var(--header-h)] z-40 flex w-[300px] max-w-[85vw] flex-col border-r border-t border-line bg-card shadow-xl transition-transform ${
           drawerOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         aria-label={t('tables.menu')}
@@ -149,7 +241,7 @@ export function ResultScreen() {
           <button
             type="button"
             aria-label={t('tables.cancel')}
-            onClick={() => setDrawerOpen(false)}
+            onClick={() => closeDrawer()}
             className="grid h-8 w-8 place-items-center rounded-lg text-ink-3 hover:bg-line-2 hover:text-ink"
           >
             ✕
@@ -181,15 +273,12 @@ export function ResultScreen() {
                     <span className="flex-1 truncate text-[13.5px] font-semibold text-ink">
                       {tb.name}
                     </span>
-                    {tb.pinned && (
-                      <span className="rounded border border-primary bg-primary-tint px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide text-primary">
-                        {t('tables.default')}
-                      </span>
-                    )}
                   </span>
                   <span className="mt-1 text-[11.5px] text-ink-3">
                     {tb.pinned
-                      ? `${t('tables.allChars', { n: tb.characters.length })} · ${t('tables.readOnly')}`
+                      ? tb.characters.length > 0
+                        ? t('tables.allChars', { n: tb.characters.length })
+                        : ''
                       : t('tables.charCount', { n: tb.characters.length })}
                   </span>
                   {!tb.pinned && (
@@ -289,22 +378,44 @@ export function ResultScreen() {
 
   return (
     <div>
-      {/* toolbar — menu, current table, export */}
+      {/* toolbar — the Tables button + table name now live in the pinned header (NavBar) */}
       <div className="rg-noprint mb-4 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          className="inline-flex items-center gap-2 rounded-[9px] border border-line px-3 py-2 text-sm text-ink hover:border-ink-3"
-        >
-          <span className="text-base leading-none">☰</span> {t('tables.menu')}
-        </button>
-        <span className="max-w-[40vw] truncate text-[15px] font-semibold">{current.name}</span>
-        {current.pinned && (
-          <span className="rounded-md border border-line px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-ink-3">
-            {t('tables.readOnly')}
-          </span>
+        {/* 11th-construct (good/bad) show/hide — left-most, only on the matrix views. On = the
+            Resume dialog's drop-zone drag-over highlight; off = the neutral Create-button style. */}
+        {(current.kind === 'rho' || current.kind === 'rho2') && (
+          <button
+            type="button"
+            onClick={() => setShow11((v) => !v)}
+            aria-pressed={show11}
+            className={
+              show11
+                ? 'rounded-[9px] border-2 border-primary bg-primary-tint px-4 py-2 text-sm text-ink'
+                : neutralBtn
+            }
+          >
+            {t('g10.eleventh')}
+          </button>
         )}
         <span className="flex-1" />
+        {/* Constructs ranking — a separate flow, greyed and locked until the 10×10 grid exists,
+            sitting just left of Create. Testee-only (edits test data). */}
+        {!IS_OBSERVER && (
+          <button
+            type="button"
+            onClick={startRanking}
+            disabled={!grid10}
+            title={!grid10 ? t('g10.rankingLocked') : undefined}
+            className={`${neutralBtn} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line`}
+          >
+            {t('g10.ranking')}
+          </button>
+        )}
+        {/* the 10×10 creation flow edits test data → testee-only (hidden on the read-only screen) */}
+        {!IS_OBSERVER && (
+          <button type="button" onClick={startGrid10} className={neutralBtn}>
+            {t('g10.create')}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setExportOpen(true)}
@@ -314,12 +425,34 @@ export function ResultScreen() {
         </button>
       </div>
 
-      {/* pair comparison — above the table on screen (in the PDF it moves below, see below) */}
-      <PairsPanel tableId={currentId} characters={current.characters} />
+      {/* pair comparison — above the table on screen (in the PDF it moves below, see below).
+          Only the grid tables have a pairs panel; the matrices + diagram do not. */}
+      {(!current.kind || current.kind === 'grid') && (
+        <PairsPanel tableId={currentId} characters={current.characters} />
+      )}
 
-      {/* the current table */}
+      {/* the current view */}
       <div className="rg-noprint">
-        <GridTable characters={current.characters} highlight={highlightFor(currentId)} />
+        {current.kind === 'relationships' ? (
+          <RelationshipsTable characters={current.characters} />
+        ) : current.kind === 'diagram' ? (
+          <ConstructsDiagram selected={diagramK} onSelect={setDiagramK} />
+        ) : current.kind === 'crel' ? (
+          <ConstructsRelTable />
+        ) : current.kind === 'grid10' ? (
+          <Grid10Table grid10={grid10} />
+        ) : current.kind === 'rho' || current.kind === 'rho2' ? (
+          // Key by variant so switching ρ ↔ ρ²×100 remounts (drops the previous table's crosshair).
+          <Grid10MatrixTable
+            key={current.kind}
+            grid10={grid10}
+            ranking={ranking}
+            variant={current.kind}
+            show11={show11}
+          />
+        ) : (
+          <GridTable characters={current.characters} highlight={highlightFor(currentId)} />
+        )}
       </div>
 
       {createPortal(overlays, document.body)}
@@ -332,6 +465,52 @@ export function ResultScreen() {
             .map((id) => tables.find((tb) => tb.id === id))
             .filter((tb): tb is ViewTable => Boolean(tb))
             .map((tb) => {
+              if (tb.kind === 'diagram') {
+                return (
+                  <section key={tb.id} className="rg-print-page">
+                    <h2 className="rg-print-name">{tb.name}</h2>
+                    <ConstructsDiagram selected={diagramK} onSelect={() => {}} />
+                  </section>
+                )
+              }
+              if (tb.kind === 'relationships') {
+                return (
+                  <section key={tb.id} className="rg-print-page">
+                    <h2 className="rg-print-name">{tb.name}</h2>
+                    <RelationshipsTable characters={tb.characters} />
+                  </section>
+                )
+              }
+              if (tb.kind === 'crel') {
+                return (
+                  <section key={tb.id} className="rg-print-page">
+                    <h2 className="rg-print-name">{tb.name}</h2>
+                    <ConstructsRelTable interactive={false} />
+                  </section>
+                )
+              }
+              if (tb.kind === 'grid10') {
+                return (
+                  <section key={tb.id} className="rg-print-page">
+                    <h2 className="rg-print-name">{tb.name}</h2>
+                    <Grid10Table grid10={grid10} interactive={false} />
+                  </section>
+                )
+              }
+              if (tb.kind === 'rho' || tb.kind === 'rho2') {
+                return (
+                  <section key={tb.id} className="rg-print-page">
+                    <h2 className="rg-print-name">{tb.name}</h2>
+                    <Grid10MatrixTable
+                      grid10={grid10}
+                      ranking={ranking}
+                      variant={tb.kind}
+                      show11={show11}
+                      interactive={false}
+                    />
+                  </section>
+                )
+              }
               const tPairs = scoredPairsFor(tb.id)
               return (
                 <section key={tb.id} className="rg-print-page">

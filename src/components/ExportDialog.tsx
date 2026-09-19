@@ -7,6 +7,7 @@ interface ExportTable {
   name: string
   characters: number[]
   pinned?: boolean
+  kind?: 'grid' | 'relationships' | 'diagram' | 'crel' | 'grid10' | 'rho' | 'rho2'
 }
 
 interface Props {
@@ -66,12 +67,9 @@ export function ExportDialog({ tables, onConfirm, onClose }: Props) {
                   {on ? '✓' : ''}
                 </span>
                 <span className="truncate text-sm font-medium text-ink">{tb.name}</span>
-                <span className="text-[12.5px] text-ink-3">
-                  · {t('tables.charCount', { n: tb.characters.length })}
-                </span>
-                {tb.pinned && (
-                  <span className="ml-auto font-mono text-[10px] uppercase tracking-wide text-primary">
-                    {t('tables.default')}
+                {(!tb.kind || tb.kind === 'grid') && (
+                  <span className="text-[12.5px] text-ink-3">
+                    · {t('tables.charCount', { n: tb.characters.length })}
                   </span>
                 )}
               </button>

@@ -4,6 +4,7 @@ import { useAppStore } from '@/store/useAppStore'
 import { usePrefsStore } from '@/store/usePrefsStore'
 import { ROLES, CLASSES, TRIADS } from '@/data'
 import type { PairVerdict } from '@/lib/pairScore'
+import { groupOf } from './gridGroups'
 import './resultGrid.css'
 
 /** Column-letter for a character column: B, C, … (0-based display index → letter). */
@@ -12,24 +13,6 @@ const colLetter = (i: number) => String.fromCharCode(66 + i)
 const POLE_CAP = 140 // max X/Y column width; longer values wrap to a second line
 const POLE_MIN = 64
 const POLE_PAD = 22
-
-/**
- * The seven character groups, keyed by the character's fixed position (0 = Me, 1–4 = family, …).
- * Each carries a pale tint — shown on the merged "groups" row and echoed on the names row below it
- * — plus an i18n label. Keying on the character index (not the display column) means a custom
- * subset keeps every character's own group colour, while the complete table reproduces the
- * B / C:F / G:J / K:M / N:Q / R:T / U:W letter ranges from the spec exactly.
- */
-const GROUPS = [
-  { max: 0, key: 'groupMe', color: 'rgba(231,76,60,0.16)' }, // B — me (red)
-  { max: 4, key: 'groupFamily', color: 'rgba(142,68,173,0.15)' }, // C:F — family (violet)
-  { max: 8, key: 'groupClose', color: 'rgba(230,126,34,0.17)' }, // G:J — close ones (orange)
-  { max: 11, key: 'groupSituational', color: 'rgba(41,128,185,0.15)' }, // K:M — situational (blue)
-  { max: 15, key: 'groupRelations', color: 'rgba(241,196,15,0.24)' }, // N:Q — relationships (yellow)
-  { max: 18, key: 'groupAuthority', color: 'rgba(232,67,147,0.14)' }, // R:T — authority (pink)
-  { max: 21, key: 'groupValues', color: 'rgba(39,174,96,0.16)' }, // U:W — values (green)
-] as const
-const groupOf = (pos: number) => GROUPS.find((g) => pos <= g.max) ?? GROUPS[GROUPS.length - 1]
 
 interface GridTableProps {
   /** 0-based name positions to render as character columns, in display order. */
