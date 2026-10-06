@@ -15,6 +15,7 @@ import { GridTable } from './GridTable'
 import { RelationshipsTable } from './RelationshipsTable'
 import { ConstructsDiagram } from './ConstructsDiagram'
 import { ConstructsRelTable } from './ConstructsRelTable'
+import { ConstructsGraph } from './ConstructsGraph'
 import { Grid10MatrixTable } from './Grid10MatrixTable'
 import './resultGrid.css'
 
@@ -26,15 +27,16 @@ const DIAGRAM_TABLE_ID = '__diagram__'
 const CREL_TABLE_ID = '__crel__'
 const RHO_TABLE_ID = '__rho__'
 const RHO2_TABLE_ID = '__rho2__'
+const GRAPH_TABLE_ID = '__graph__'
 
 interface ViewTable {
   id: string
   name: string
   characters: number[]
   pinned?: boolean
-  /** 'grid' (main + custom), 'relationships', 'diagram', 'crel' (constructs relations table), or the
-   *  Spearman matrices 'rho' (ρ) / 'rho2' (ρ² × 100). */
-  kind?: 'grid' | 'relationships' | 'diagram' | 'crel' | 'rho' | 'rho2'
+  /** 'grid' (main + custom), 'relationships', 'diagram', 'crel' (constructs relations table), the
+   *  Spearman matrices 'rho' (ρ) / 'rho2' (ρ² × 100), or the 'graph' (construct relations scatter). */
+  kind?: 'grid' | 'relationships' | 'diagram' | 'crel' | 'rho' | 'rho2' | 'graph'
 }
 
 type Builder = { mode: 'new' } | { mode: 'rename'; id: string; name: string }
@@ -107,6 +109,13 @@ export function ResultScreen() {
             pinned: true,
             kind: 'rho2' as const,
           },
+          {
+            id: GRAPH_TABLE_ID,
+            name: t('tables.graphName'),
+            characters: [],
+            pinned: true,
+            kind: 'graph' as const,
+          },
         ]
       : []),
     ...savedTables,
@@ -126,8 +135,13 @@ export function ResultScreen() {
   }, [current.name, current.pinned, setHeaderCurrent])
   useEffect(() => () => closeDrawer(), [closeDrawer]) // close the drawer when leaving the result view
 
-  // Toggle for the matrices' 11th (good/bad) construct — shown by default.
+  // Toggle for the matrices' 11th (good/bad) construct — shown by default. Also drives which two
+  // constructs become the graph's axes.
   const [show11, setShow11] = useState(true)
+  // The graph's "Toggle detailed view" button flips all dots' detail via a counter; the graph
+  // reports back how many are currently shown so the button can reflect the on/off state.
+  const [graphToggle, setGraphToggle] = useState(0)
+  const [graphDetailCount, setGraphDetailCount] = useState(0)
 
   const [builder, setBuilder] = useState<Builder | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
@@ -362,9 +376,9 @@ export function ResultScreen() {
     <div>
       {/* toolbar — the Tables button + table name now live in the pinned header (NavBar) */}
       <div className="rg-noprint mb-4 flex flex-wrap items-center gap-3">
-        {/* 11th-construct (good/bad) show/hide — left-most, only on the matrix views. On = the
+        {/* 11th-construct (good/bad) show/hide — left-most, on the matrices + the graph. On = the
             Resume dialog's drop-zone drag-over highlight; off = the neutral Create-button style. */}
-        {(current.kind === 'rho' || current.kind === 'rho2') && (
+        {(current.kind === 'rho' || current.kind === 'rho2' || current.kind === 'graph') && (
           <button
             type="button"
             onClick={() => setShow11((v) => !v)}
@@ -376,6 +390,22 @@ export function ResultScreen() {
             }
           >
             {t('g10.eleventh')}
+          </button>
+        )}
+        {/* Toggle detailed view — flips all dots' detail on/off; right of the 11th toggle. Same
+            on/off styling as the 11th-construct button (highlighted while any detail is shown). */}
+        {current.kind === 'graph' && (
+          <button
+            type="button"
+            onClick={() => setGraphToggle((n) => n + 1)}
+            aria-pressed={graphDetailCount > 0}
+            className={
+              graphDetailCount > 0
+                ? 'rounded-[9px] border-2 border-primary bg-primary-tint px-4 py-2 text-sm text-ink'
+                : neutralBtn
+            }
+          >
+            {t('g10.toggleDetails')}
           </button>
         )}
         <span className="flex-1" />
@@ -409,6 +439,14 @@ export function ResultScreen() {
           <ConstructsDiagram selected={diagramK} onSelect={setDiagramK} />
         ) : current.kind === 'crel' ? (
           <ConstructsRelTable />
+        ) : current.kind === 'graph' ? (
+          <ConstructsGraph
+            grid10={grid10}
+            ranking={ranking}
+            show11={show11}
+            toggleSignal={graphToggle}
+            onDetailChange={setGraphDetailCount}
+          />
         ) : current.kind === 'rho' || current.kind === 'rho2' ? (
           // Key by variant so switching ρ ↔ ρ²×100 remounts (drops the previous table's crosshair).
           <Grid10MatrixTable
@@ -454,6 +492,14 @@ export function ResultScreen() {
                   <section key={tb.id} className="rg-print-page">
                     <h2 className="rg-print-name">{tb.name}</h2>
                     <ConstructsRelTable interactive={false} />
+                  </section>
+                )
+              }
+              if (tb.kind === 'graph') {
+                return (
+                  <section key={tb.id} className="rg-print-page">
+                    <h2 className="rg-print-name">{tb.name}</h2>
+                    <ConstructsGraph grid10={grid10} ranking={ranking} show11={show11} interactive={false} />
                   </section>
                 )
               }

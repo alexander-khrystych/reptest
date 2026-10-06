@@ -8,7 +8,7 @@ WORKDIR /app
 # Local mode needs no account; silence wrangler's interactive first-run telemetry prompt.
 ENV WRANGLER_SEND_METRICS=false CI=1
 
-RUN npm install -g pnpm@11.8.0
+RUN npm install -g pnpm@12.8.1
 
 # Install deps first (cached layer). `pnpm rebuild` forces the native build scripts that stock
 # pnpm skips by default (the repo's pnpm-workspace.yaml uses a sandbox-only approval key).

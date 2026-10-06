@@ -9,9 +9,11 @@ import './resultGrid.css'
  * elicited ones plus the fixed 11th "good / bad"). Both the left header column and the top header
  * (vertical, reading bottom-to-top) are the construct pairs. Cell [i][j] is the coefficient between
  * construct i and construct j; the self-diagonal is greyed. `variant` picks the value: `rho` shows ρ
- * to 4 decimals, `rho2` shows ρ² × 100 to 3 decimals. `show11` toggles the 11th (good/bad) construct
- * — off drops its row + column, leaving a 10×10. Clicking a cell lights its whole row + column (the
- * shared crosshair every result table carries). Reuses `resultGrid.css`.
+ * to 4 decimals, `rho2` shows ρ² × 100 to 3 decimals. The `rho2` variant also gets a bottom "∑"
+ * row — each column's sum of its (off-diagonal) values. `show11` toggles the 11th (good/bad)
+ * construct — off drops its row + column, leaving a 10×10, and the sums follow. Clicking a cell
+ * lights its whole row + column (the shared crosshair every result table carries). Reuses
+ * `resultGrid.css`.
  */
 export function Grid10MatrixTable({
   grid10,
@@ -56,10 +58,22 @@ export function Grid10MatrixTable({
   const fmt = variant === 'rho' ? fmtRho : fmtRho2
 
   // The left header column reads a pole pair (wraps when long); data columns fit the widest value
-  // (ρ² × 100 → up to "100.000").
+  // (ρ² × 100 → up to "100.000", and its sum row up to "1000.000").
   const headW = 180
-  const colW = variant === 'rho' ? 54 : 60
+  const colW = variant === 'rho' ? 54 : 64
   const minWidth = headW + colW * poles.length
+
+  // ρ²×100 only: a bottom "∑" row — each column's total of its displayed (off-diagonal) cell values,
+  // with the 11th construct included when it's shown. Sum the rounded values so the total matches
+  // what's on screen (a lazy all-identical ranking makes every cell 100 → every column sum 1000).
+  const sums =
+    variant === 'rho2'
+      ? poles.map((_, j) => {
+          let s = 0
+          for (let i = 0; i < poles.length; i++) if (i !== j) s += Number(fmtRho2(m[i][j]))
+          return s
+        })
+      : null
 
   return (
     <div className="rg-scroll">
@@ -113,6 +127,18 @@ export function Grid10MatrixTable({
               })}
             </tr>
           ))}
+
+          {/* ρ²×100 only: the column-sum row (∑ in the left header, each column's total below it) */}
+          {sums && (
+            <tr>
+              <td className="mtx-rhead mtx-sumhead b-right b-top">∑</td>
+              {sums.map((s, j) => (
+                <td key={j} className={`mtx-cell mtx-sum b-top${hlCol(j)}`}>
+                  {s.toFixed(3)}
+                </td>
+              ))}
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

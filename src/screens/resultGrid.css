@@ -431,6 +431,95 @@
   line-height: 1.2;
   white-space: normal;
 }
+/* ρ²×100 bottom sum row: the ∑ header + the per-column totals (subtly tinted + bold) */
+.rg-grid td.mtx-sumhead {
+  background-color: var(--card);
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.rg-grid td.mtx-sum {
+  font-weight: 600;
+  background-image: linear-gradient(var(--grid-title), var(--grid-title));
+}
+
+/* ---- construct relations graph (Spearman scatter) ------------------------------------------
+   All-SVG: ruler-tick axes, dots, dotted guides, a right-hand bubble column with leader lines, and
+   the axis titles as continuations of the axes. Reuses the diagram's `.cd-axis` / `.cd-num`. */
+.cg-wrap {
+  max-width: 760px;
+  overflow-x: auto;
+}
+.cg-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+/* ruler ticks on the axes (no full gridlines): minor every 1, major every 5 */
+.cg-tick {
+  stroke: var(--ink-2);
+  stroke-width: 1;
+}
+.cg-tick-mn {
+  stroke: var(--ink-3);
+  stroke-width: 1;
+}
+/* axis titles (two-colour pole pair) */
+.cg-atitle {
+  font: 13px Arial, sans-serif;
+}
+.cg-em {
+  fill: var(--emergent);
+}
+.cg-co {
+  fill: var(--contrast);
+}
+.cg-sep {
+  fill: var(--ink-3);
+}
+/* dots — outline only by default, filled when hovered / frozen */
+.cg-dot {
+  fill: var(--card);
+  stroke: var(--primary);
+  stroke-width: 1.6;
+}
+.cg-dot.on {
+  fill: var(--primary);
+}
+.cg-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+/* dotted guide lines from a shown dot to each axis + the value tick on the axis */
+.cg-drop {
+  stroke: var(--ink-3);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.cg-vtick {
+  stroke: var(--primary);
+  stroke-width: 1.5;
+}
+.cg-vnum {
+  fill: var(--primary);
+  font: 600 11px Arial, sans-serif;
+}
+/* name bubble (right-hand column) + the dotted leader joining it to its dot */
+.cg-leader {
+  stroke: var(--ink-3);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+.cg-bub rect {
+  fill: var(--card);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.cg-bub text {
+  font: 12px Arial, sans-serif;
+}
 
 /* ---- constructs-relations matrix (22×22) ----------------------------------------------------
    Matrix-style headers (like ρ) but each construct is two lines — elicited pole over contrast pole —

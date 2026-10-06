@@ -4,7 +4,7 @@
 # ---- build stage ----
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
-RUN npm install -g pnpm@11.8.0
+RUN npm install -g pnpm@12.8.1
 
 # VITE_* is inlined at BUILD time. The WebSocket originates from the browser on the host (not this
 # container), so the relay must be addressed as localhost — Docker-internal DNS never applies.
