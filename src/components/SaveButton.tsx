@@ -19,8 +19,9 @@ function downloadSaveFile() {
 }
 
 /** Save & Resume dialog — a short link (stored server-side) plus a downloadable archive. The link is
- *  generated when the dialog opens (re-opening after more progress makes a fresh one). */
-function SaveDialog({ onClose }: { onClose: () => void }) {
+ *  generated when the dialog opens (re-opening after more progress makes a fresh one). Exported so the
+ *  "Start over" flow can offer it as a "Backup" step before wiping progress. */
+export function SaveDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   const [link, setLink] = useState<string | null>(null)
   const [error, setError] = useState(false)

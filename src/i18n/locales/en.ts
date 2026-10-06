@@ -121,9 +121,11 @@ export const en = {
     button: 'Start over',
     close: 'Close',
     cancel: 'Cancel',
-    continue: 'Continue',
+    continue: 'Yes, reset and start over',
     confirm: 'Yes, start over',
-    warnBody: 'Starting over will wipe all your current progress and reset the test. Do you wish to start the test over?',
+    backup: 'Backup',
+    warnBody:
+      'Starting over will wipe all your current progress and reset the test. Save your progress to prevent the data loss.\n\nDo you wish to start the test over?',
     confirmBody: 'This action is irreversible, all progress will be lost. Are you sure you wish to start over?',
   },
   sharing: {

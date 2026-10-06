@@ -10,7 +10,10 @@ import { SaveButton } from './SaveButton'
  * Top nav (testee) — pinned to the top of the page at a fixed compact height (`--header-h`). On the
  * left: in the table view, the Tables button + current table name (the drawer itself still lives in
  * ResultScreen, coordinated via useResultUi); in the flow screens, the flow title. On the right:
- * Share, Save, language + theme. Its z-index sits above the table drawer, which starts below it.
+ * Share, Save, language + theme. Its z-index sits above the table drawer (z-40) AND above every
+ * modal overlay (which top out at z-[60]) so the header is always on top and stays interactive while
+ * a modal is open — clicking it never lands on a modal backdrop, so the modal can't be dismissed by
+ * it. Only the header's own dropdowns (NavControls, z-[100]) and toasts (z-[90]) sit above it.
  */
 export function NavBar() {
   const { t } = useTranslation()
@@ -46,7 +49,7 @@ export function NavBar() {
         : null
 
   return (
-    <nav className="rg-noprint sticky top-0 z-50 h-[var(--header-h)] border-b border-line-2 bg-canvas">
+    <nav className="rg-noprint sticky top-0 z-[70] h-[var(--header-h)] border-b border-line-2 bg-canvas">
       <div className="mx-auto flex h-full max-w-[1600px] items-center gap-3 px-4">
         {isResult ? (
           // Table view: Tables button (opens the drawer) + current table name, replacing the title.

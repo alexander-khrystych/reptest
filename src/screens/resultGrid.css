@@ -448,7 +448,7 @@
    All-SVG: ruler-tick axes, dots, dotted guides, a right-hand bubble column with leader lines, and
    the axis titles as continuations of the axes. Reuses the diagram's `.cd-axis` / `.cd-num`. */
 .cg-wrap {
-  max-width: 760px;
+  /* max-width is set inline (tracks the viewBox so the plot scale stays stable as labels widen) */
   overflow-x: auto;
 }
 .cg-svg {
@@ -457,7 +457,14 @@
   height: auto;
   overflow: visible;
 }
-/* ruler ticks on the axes (no full gridlines): minor every 1, major every 5 */
+/* faint dotted square mesh behind the plot — 1px dots, wide gaps, barely noticeable */
+.cg-mesh {
+  stroke: var(--line);
+  stroke-width: 1;
+  stroke-dasharray: 1 6;
+  stroke-linecap: round;
+}
+/* ruler ticks on the axes: minor every 1, major every 5 */
 .cg-tick {
   stroke: var(--ink-2);
   stroke-width: 1;
@@ -488,6 +495,11 @@
 .cg-dot.on {
   fill: var(--primary);
 }
+/* extra-highlighted dot — solid yellow (emergent) */
+.cg-dot.hl {
+  fill: var(--emergent);
+  stroke: var(--emergent);
+}
 .cg-hit {
   fill: transparent;
   cursor: pointer;
@@ -497,6 +509,11 @@
   stroke: var(--ink-3);
   stroke-width: 1;
   stroke-dasharray: 3 3;
+}
+/* highlighted dot's guides + leader turn teal */
+.cg-drop.hl,
+.cg-leader.hl {
+  stroke: var(--primary);
 }
 .cg-vtick {
   stroke: var(--primary);
@@ -519,6 +536,14 @@
 }
 .cg-bub text {
   font: 12px Arial, sans-serif;
+}
+.cg-bub.int {
+  cursor: pointer;
+}
+/* highlighted bubble — framed like the "11th construct" button (primary 2px border, same fill) */
+.cg-bub.hl rect {
+  stroke: var(--primary);
+  stroke-width: 2;
 }
 
 /* ---- constructs-relations matrix (22×22) ----------------------------------------------------
