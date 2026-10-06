@@ -104,6 +104,7 @@ export const en = {
     exportTitle: 'Export to PDF',
     exportSub: 'Choose which tables to include — combined into one document, one table per page.',
     exportSelected: '{{n}} of {{total}} selected',
+    selectAll: 'Select/Deselect all',
     generate: 'Generate PDF',
   },
   pairs: {

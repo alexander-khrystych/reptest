@@ -12,6 +12,8 @@ interface ExportTable {
 
 interface Props {
   tables: ExportTable[]
+  /** The table currently open — the only one selected by default. */
+  currentId?: string
   onConfirm: (ids: string[]) => void
   onClose: () => void
 }
@@ -19,15 +21,25 @@ interface Props {
 const neutralBtn = 'rounded-[9px] border border-line px-4 py-2 text-sm text-ink hover:border-ink-3'
 
 /**
- * Pick which tables go into the exported PDF. Multiple tables become one document (one per
- * page). Everything is selected by default; the user prunes. The default table is included
- * like any other — it just can't be unpinned from the top of the list elsewhere.
+ * Pick which tables go into the exported PDF. Multiple tables become one document (one per page).
+ * Only the currently-open table is selected by default; a Select/Deselect-all checkbox at the top
+ * (with an indeterminate "–" state when only some are picked) toggles the whole list.
  */
-export function ExportDialog({ tables, onConfirm, onClose }: Props) {
+export function ExportDialog({ tables, currentId, onConfirm, onClose }: Props) {
   const { t } = useTranslation()
-  const [selected, setSelected] = useState<string[]>(tables.map((tb) => tb.id))
+  const [selected, setSelected] = useState<string[]>(() =>
+    currentId && tables.some((tb) => tb.id === currentId)
+      ? [currentId]
+      : tables.slice(0, 1).map((tb) => tb.id),
+  )
   const toggle = (id: string) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
+
+  const allOn = tables.length > 0 && selected.length === tables.length
+  const partial = selected.length > 0 && selected.length < tables.length
+  // None or some selected → select all; all selected → clear.
+  const toggleAll = () => setSelected(allOn ? [] : tables.map((tb) => tb.id))
+
   useDialogKeys(onClose, () => selected.length > 0 && onConfirm(selected))
 
   return (
@@ -46,7 +58,31 @@ export function ExportDialog({ tables, onConfirm, onClose }: Props) {
           <p className="mt-1 text-sm text-ink-2">{t('tables.exportSub')}</p>
         </div>
 
-        <div className="flex flex-col gap-2 overflow-y-auto px-6 py-4">
+        {/* Select/Deselect all — a plain checkbox + label, not a table row. */}
+        <div className="px-6 pt-4">
+          <button
+            type="button"
+            onClick={toggleAll}
+            role="checkbox"
+            aria-checked={allOn ? 'true' : partial ? 'mixed' : 'false'}
+            className="flex w-full items-center gap-3 rounded-[9px] px-1.5 py-2 text-left hover:bg-line-2/50"
+          >
+            <span
+              className={`grid h-[19px] w-[19px] flex-none place-items-center rounded-[5px] border text-[11px] font-bold leading-none ${
+                allOn
+                  ? 'border-primary bg-primary text-white'
+                  : partial
+                    ? 'border-primary bg-card text-primary'
+                    : 'border-ink-3 bg-card text-white'
+              }`}
+            >
+              {allOn ? '✓' : partial ? '−' : ''}
+            </span>
+            <span className="text-sm font-medium text-ink">{t('tables.selectAll')}</span>
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2 overflow-y-auto border-t border-line-2 px-6 py-4">
           {tables.map((tb) => {
             const on = selected.includes(tb.id)
             return (

@@ -104,6 +104,7 @@ export const uk: Translation = {
     exportTitle: 'Експорт у PDF',
     exportSub: 'Виберіть, які таблиці включити — вони об’єднаються в один документ, по одній таблиці на сторінку.',
     exportSelected: 'вибрано {{n}} з {{total}}',
+    selectAll: 'Вибрати всі',
     generate: 'Створити PDF',
   },
   pairs: {

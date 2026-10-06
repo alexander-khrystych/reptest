@@ -49,6 +49,7 @@ export function ConstructsGraph({
   toggleSignal = 0,
   onDetailChange,
   interactive = true,
+  detailAll = false,
 }: {
   grid10: Grid10 | null
   ranking: number[][] | null
@@ -56,6 +57,8 @@ export function ConstructsGraph({
   toggleSignal?: number
   onDetailChange?: (count: number) => void
   interactive?: boolean
+  /** Force every dot into detailed view (no highlights) — used for the PDF export. */
+  detailAll?: boolean
 }) {
   const { t } = useTranslation()
   const [hovered, setHovered] = useState<number | null>(null)
@@ -147,7 +150,7 @@ export function ConstructsGraph({
   // A dot is "detailed" (shows bubble + guides) while frozen or hovered; it is "highlighted" (split
   // colours, teal guides, framed bubble) only once it is persistently detailed (frozen) AND either
   // locked or under the pointer — a bare dot's transient hover is plain detail, never a highlight.
-  const isDetailed = (a: number) => frozen.has(a) || hovered === a
+  const isDetailed = (a: number) => detailAll || frozen.has(a) || hovered === a
   const isHigh = (a: number) => frozen.has(a) && (lit.has(a) || hovered === a)
   const shown = dots.filter(isDetailed)
 

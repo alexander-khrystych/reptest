@@ -332,6 +332,7 @@ export function ResultScreen() {
       {exportOpen && (
         <ExportDialog
           tables={tables}
+          currentId={currentId}
           onConfirm={(ids) => {
             setExportOpen(false)
             setExportIds(ids)
@@ -499,7 +500,13 @@ export function ResultScreen() {
                 return (
                   <section key={tb.id} className="rg-print-page">
                     <h2 className="rg-print-name">{tb.name}</h2>
-                    <ConstructsGraph grid10={grid10} ranking={ranking} show11={show11} interactive={false} />
+                    <ConstructsGraph
+                      grid10={grid10}
+                      ranking={ranking}
+                      show11={show11}
+                      interactive={false}
+                      detailAll
+                    />
                   </section>
                 )
               }

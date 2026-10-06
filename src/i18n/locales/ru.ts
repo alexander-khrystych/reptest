@@ -104,6 +104,7 @@ export const ru: Translation = {
     exportTitle: 'Экспорт в PDF',
     exportSub: 'Выберите, какие таблицы включить — они объединятся в один документ, по одной таблице на страницу.',
     exportSelected: 'выбрано {{n}} из {{total}}',
+    selectAll: 'Выбрать все',
     generate: 'Создать PDF',
   },
   pairs: {
