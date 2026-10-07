@@ -5,9 +5,9 @@
  * `orders[k][0]` is the character ranked #1 for that construct and `orders[k][n-1]` the last. Each
  * ranking is a full permutation of the same n slots.
  *
- * The coefficient uses the project's fixed formula (note: no leading factor of 6):
+ * The coefficient uses the project's fixed formula:
  *
- *     ρ = 1 − Σd² / (n³ − n)
+ *     ρ = 1 − (6 * Σd²) / (n³ − n)
  *
  * where, for each rank position i, d is the difference between the character slot ranked i-th under
  * construct a and the slot ranked i-th under construct b — i.e. `orders[a][i] − orders[b][i]`. This
@@ -21,7 +21,7 @@ export function rhoMatrix(orders: number[][]): number[][] {
     orders.map((ob) => {
       let sumD2 = 0
       for (let i = 0; i < n; i++) sumD2 += (oa[i] - ob[i]) ** 2
-      return 1 - sumD2 / denom
+      return 1 - (6 * sumD2) / denom
     }),
   )
 }

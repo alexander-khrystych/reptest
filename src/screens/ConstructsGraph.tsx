@@ -26,9 +26,9 @@ type Pole = { em: string; co: string }
 /**
  * Construct relations graph — a Spearman scatter built from the ρ²×100 column sums (`∑`): biggest ∑
  * → axis X, 2nd → axis Y; every other construct is a dot at (ρ²×100 with X, ρ²×100 with Y). Positive
- * quarter only; both axes run from a floor computed from BOTH show11 states (so the scale is stable
- * when the 11th toggles) up to 100, drawn as ruler ticks (major every 5 + numbers, minor every 1)
- * over a faint dotted square mesh.
+ * quarter only; both axes run from a floor (lowest value − 5) up to a ceiling (highest value + 5),
+ * both computed across BOTH show11 states so the scale is stable when the 11th toggles, drawn as
+ * ruler ticks (major every 5 + numbers, minor every 1) over a faint dotted square mesh.
  *
  * Each dot has three states. **Bare**: a hollow ring. **Detailed**: filled, with dotted guides to
  * both axes, its two values marked on the scales (the X value staggers so numbers never overlap) and
@@ -101,11 +101,15 @@ export function ConstructsGraph({
     }
     const resOn = pick(allPoles)
     const resOff = pick(polesOff)
-    // Floor from the lowest plotted value across BOTH toggle states → consistent scale either way.
-    const minVal = Math.floor(Math.min(...resOn.axisVals, ...resOff.axisVals) - 5)
+    // Floor/ceil from the lowest/highest plotted value across BOTH toggle states, so the scale is the
+    // same whether or not the 11th construct is shown. Max is the highest value + 5 rounded up (was a
+    // fixed 100); min is the lowest value − 5 rounded down.
+    const allAxisVals = [...resOn.axisVals, ...resOff.axisVals]
+    const minVal = Math.floor(Math.min(...allAxisVals) - 5)
+    const maxVal = Math.ceil(Math.max(...allAxisVals) + 5)
     const cur = show11 ? resOn : resOff
     const poles = show11 ? allPoles : polesOff
-    return { poles, r2, X: cur.X, Y: cur.Y, dots: cur.dots, minVal }
+    return { poles, r2, X: cur.X, Y: cur.Y, dots: cur.dots, minVal, maxVal }
   }, [grid10, ranking, show11, t])
 
   // Toggle EVERY dot (Toggle-detailed-view button): flush to bare if anything is shown, else detail
@@ -135,17 +139,17 @@ export function ConstructsGraph({
     )
   }
 
-  const { poles, r2, X, Y, dots, minVal } = data
-  const px = (v: number) => PL + ((v - minVal) / (100 - minVal)) * PLOT
-  const py = (v: number) => PT + ((100 - v) / (100 - minVal)) * PLOT
+  const { poles, r2, X, Y, dots, minVal, maxVal } = data
+  const px = (v: number) => PL + ((v - minVal) / (maxVal - minVal)) * PLOT
+  const py = (v: number) => PT + ((maxVal - v) / (maxVal - minVal)) * PLOT
   const xOf = (a: number) => r2(a, X)
   const yOf = (a: number) => r2(a, Y)
   const fmt1 = (v: number) => v.toFixed(1)
 
   const majorVals: number[] = []
-  for (let g = Math.ceil(minVal / 5) * 5; g <= 100; g += 5) majorVals.push(g)
+  for (let g = Math.ceil(minVal / 5) * 5; g <= maxVal; g += 5) majorVals.push(g)
   const minorVals: number[] = []
-  for (let g = Math.ceil(minVal); g <= 100; g++) if (g % 5 !== 0) minorVals.push(g)
+  for (let g = Math.ceil(minVal); g <= maxVal; g++) if (g % 5 !== 0) minorVals.push(g)
 
   // A dot is "detailed" (shows bubble + guides) while frozen or hovered; it is "highlighted" (split
   // colours, teal guides, framed bubble) only once it is persistently detailed (frozen) AND either
